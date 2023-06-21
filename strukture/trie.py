@@ -49,6 +49,25 @@ class Trie:
 
         # curr_node.num_of_repeats += 1
 
+
+    def add_words(self, *words: List[str]) -> None: #TODO: napraviti mapu word:krajni node u triu i ako se ponavljaju rijeci nece morati da prolazi kroz trie
+        word_cache = {}  #Dict(str, 'Trie.Node')
+
+        for word in words:
+            if word in word_cache:
+                word_cache[word].num_of_repeats += 1
+                continue
+
+            curr_node = self._root
+            for char in word:
+                if curr_node.children.setdefault(char, None) is None:
+                    curr_node.children[char] = Trie.Node()
+
+                curr_node = curr_node.children[char]
+
+            curr_node.num_of_repeats += 1
+
+
         
 
     def __len__(self) -> int:
