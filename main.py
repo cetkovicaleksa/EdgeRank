@@ -31,8 +31,14 @@ if __name__ == "__main__":
     status = Status(status_list)
     status.status_message = "900 "#"Thism new evidence could very well elect Trump.IT'S OVER: Wikileaks Exposes The Assassination Of Scalia... This Will Bring Down The Clintons And The Democratic Party!"
 
-    
-    trie = DataHandler.timed(status, func = Trie.new_trie_from_status, loading_msg="Making trie...", end_msg='done in: ')
+    dh = DataHandler()
+    try:
+        trie = dh.timed(dh.load_original_data)
+    except Exception:
+        raise
+    except TypeError:
+        raise
+        
     print(trie)
     #trie = Trie.new_trie_from_status(status)
 

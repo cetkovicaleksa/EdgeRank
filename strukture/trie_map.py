@@ -10,7 +10,7 @@ class TrieMap:
     
     @staticmethod
     def new_trie_map(statusi_lista: List[Status] = []) -> Dict[str, Trie]: 
-        return {status.status_id : Trie.new_trie_from_status(status)     for status in statusi_lista}
+        return { status.status_id : trie    for status, trie in (statusi_lista, Trie.new_trie_from_status(statusi_lista)) }
     
     
     #TODO:load and save trie_map
@@ -21,7 +21,7 @@ class TrieMap:
                 new_trie_map = pickle.load(file)
             return new_trie_map
         except FileNotFoundError:
-            raise FileNotFoundError #temporary
+            raise #temporary
         except EOFError:
             return TrieMap.new_trie_map()
             

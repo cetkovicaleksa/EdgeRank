@@ -2,8 +2,9 @@ from entiteti.weights import *
 
 
 REACTION_WEIGHTS = RW = ReactionWeights(1, 2, 1.5, 1.5, 1.5, 1.5, 3)
-STATUS_WEIGHTS = SW = StatusWeight(8, 6, 0.5)
+STATUS_WEIGHTS = SW = StatusWeight(8, 6, 1)
 HUMAN_INTERACTION_WEIGHTS = HIW = HumanInteractionWeights(17, 7, 5.7, 1)
+TIME_DECAY_WEIGHTS = TDW = TimeDecayWeights(0.5, 18, 10, 7, 3, 2, 0.3) #decay rate and time threshold growth bonus
 
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 

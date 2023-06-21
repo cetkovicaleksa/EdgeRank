@@ -28,9 +28,6 @@ class Comment:
 
 
 
-    # def csv(self, return_string: bool = False) -> list or str: #mozda??
-    #     return Comment.csv(self, return_string)
-
     @staticmethod
     def csv(comment: 'Comment', return_string: bool = False) -> Union[list, str]:
         ret = [
