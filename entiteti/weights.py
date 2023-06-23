@@ -11,11 +11,11 @@ class ReactionWeights(namedtuple("ReactionWeights", "likes loves wows hahas sads
 class StatusWeight(namedtuple("StatusWeights", "shares comments reactions")):
     pass
 
-class SearchWeights():
+class SearchWeights(namedtuple("SearchWeights", "word_weight phrase_weight edge_rank_weight")):
     pass
 
 
-class TimeDecayWeights(namedtuple("TDWeights", "decay_factor last_hour today this_week this_month this_year long_time_ago")):
+class TimeDecayWeights(namedtuple("TDWeights", "decay_rate last_hour today this_week this_month this_year long_time_ago")):
     pass
 
 # class Treshold(namedtuple("Treshold", "criteria factor")):

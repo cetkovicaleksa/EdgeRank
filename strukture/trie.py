@@ -5,7 +5,11 @@ from typing import List, Union
 
 class Trie:
 
+    __slots__ = "_root"
+
     class Node:
+        __slots__ = "children", "num_of_repeats"
+        
         def __init__(self, num_of_repeats = 0) -> None:
             self.children = {}      
             self.num_of_repeats = num_of_repeats
@@ -50,22 +54,24 @@ class Trie:
         # curr_node.num_of_repeats += 1
 
 
-    def add_words(self, *words: List[str]) -> None: #TODO: napraviti mapu word:krajni node u triu i ako se ponavljaju rijeci nece morati da prolazi kroz trie
+    def add_words(self, *words: List[str]) -> None:
         word_cache = {}  #Dict(str, 'Trie.Node')
 
         for word in words:
-            if word in word_cache:
+            if word_cache.get(word, None) is not None:
                 word_cache[word].num_of_repeats += 1
                 continue
 
-            curr_node = self._root
+            curr_node = self._root #moze provjeriti ako je neka rijec iz word_cache prefiks trenutne pa da ne krece od root?
             for char in word:
                 if curr_node.children.setdefault(char, None) is None:
                     curr_node.children[char] = Trie.Node()
 
                 curr_node = curr_node.children[char]
+                
 
             curr_node.num_of_repeats += 1
+            word_cache[word] = curr_node
 
 
         
@@ -87,7 +93,7 @@ class Trie:
 
    
     @staticmethod 
-    def new_trie_from_status(*statuses: Status) -> Union['Trie', List['Trie'], ValueError]:
+    def new_trie_from_status(*statuses: Status) -> Union['Trie', List['Trie'], ValueError, AttributeError]:
         trie_list = []
         for status in statuses:
              # ukloni sve znakove osim brojeva, slova i razmaka (zadrzi prazan string?!?)
@@ -96,8 +102,9 @@ class Trie:
                         for word in status.status_message.split(' ') ]
              
              new_trie = Trie()
-             for word in message: 
-                 new_trie.add_word(word)  #TODO: maby add function to add multiple words to trie?
+             new_trie.add_words(*message)
+            #  for word in message: 
+            #      new_trie.add_word(word)  #TODO: maby add function to add multiple words to trie?
 
              trie_list.append(new_trie)
 

@@ -39,12 +39,18 @@ class DataHandler:
         return c.load_data(c.__test_paths.friends, c.__test_paths.statuses, 
                              c.__test_paths.shares, c.__test_paths.comments, c.__test_paths.reactions)
     
+    
     def load_trie_from_default(self):
         return self.load_trie_map(self.__pkl_paths.trie)
     
-
     def save_trie_to_default(self, trie_map):
         return self.save_trie_map(trie_map, self.__pkl_paths.trie)
+    
+    def load_graph_from_default(self):
+        return self.load_graph(self.__pkl_paths.graph)
+    
+    def save_graph_to_default(self, graph):
+        return self.save_graph(graph, self.__pkl_paths.graph)
 
 
     @staticmethod
@@ -78,26 +84,7 @@ class DataHandler:
 
 
 
-    @staticmethod
-    def timed(func: callable = lambda *args: None, *params,  loading_msg: str = None, end_msg: str = None) -> any:
-        """Prints out a loading_msg and calls the passed func with given params.
-        After the execution of given function prints out  the end_msg followed by the time it took to complete."""
-
-        if loading_msg:
-            print(loading_msg)
-        
-        timer = time.time()
-        try:
-            ret = func(*params) if params and func else func() if func else None
-        except BaseException as e:
-            raise    
-        timer = time.time() - timer
-        if end_msg:
-            print(end_msg, end='')
-
-        print(timer)
-        return ret
-
+    
 
 
     
