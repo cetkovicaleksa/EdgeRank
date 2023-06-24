@@ -4,7 +4,7 @@ from collections import defaultdict, Callable, namedtuple
 
 class Graph:
     """Implementacija usmjerenog grafa gdje svaki vertex sadrzi kolekiju susjednih."""
-    __slots__ = "_adj", "_vertices _default_edge_weight"
+    __slots__ = "_adj", "_vertices"
 
     class Edge(namedtuple("Edge", "outgoing incoming value")): #maby make it hashable for ordered pair (outgoing, incoming)
         pass
@@ -17,11 +17,9 @@ class Graph:
 
 
 
-    def __init__(self, vertices: List[Hashable], default_weight: float = 0) -> None:
-        self._adj = OutgoingDict(lambda: IncomingDict(default_weight))    # {  v0:{v2:weight},   v1:{v0:weight},  v2:{v1:weight, v0:weight}  }
+    def __init__(self, vertices: List[Hashable], default_edge_weight: float = 0) -> None:
+        self._adj = OutgoingDict(lambda: IncomingDict(default_edge_weight))    # {  v0:{v2:weight},   v1:{v0:weight},  v2:{v1:weight, v0:weight}  }
         self._vertices = set(vertices)   #only to know if the vertex exists in the graph
-        self._default_edge_weight = default_weight #to make it easier and faster to get the IncomingDict default value
-
 
         
     def _validate_vertex(self, v) -> Union[None, 'Graph.InvalidVertexException']:
@@ -43,7 +41,7 @@ class Graph:
                 self.Edge(outgoing, incoming, value)
                 for outgoing, incoming_dict in self._adj.items()
                 for incoming, value in incoming_dict.items()
-               ]
+        ]
 
 
     def get_edge(self, u, v) -> Union[float, 'Graph.InvalidVertexException']:
@@ -62,7 +60,7 @@ class Graph:
         self._validate_vertex(u)
         self._validate_vertex(v)
         
-        if v in self._adj[u].keys():  #prevents overwrites, this won't ignore the edges implicitly set to default value
+        if v in self._adj[u].keys():  #prevents overwrites, won't overwrite the edges implicitly set to default value
             raise self.EdgeAlreadyExistsException(f"Edge from '{u}' to '{v}' already exists.") 
         
         self._adj[u][v] = w
@@ -82,7 +80,7 @@ class Graph:
 
     def remove_edge(self, u, v) -> Union[bool, 'Graph.InvalidVertexException']:
         """
-        After the call the edge will have been removed.
+        After the call there will be no edge from u to v.
         Returns True if the edge existed, False if it didn't.
         Raises InvalidVertexException if either u or v is invalid.
         """
@@ -96,7 +94,7 @@ class Graph:
         return True
     
     
-    def modify_edge(self, u, v, f: Callable[[float], float]) -> Union[None, 'Graph.InvalidVertexException']:
+    def modify_edge(self, u, v, f: 'Callable[[float], float]') -> Union[None, 'Graph.InvalidVertexException']:
         """
         Substitutes the current weight of the edge with its image in the provided function f.
         The function must be defined as 'f: R -> X', where R is the set of real numbers and X ⊆ R.
@@ -126,9 +124,11 @@ class Graph:
         if outgoing is True:
             return [ self.Edge(v, u, w) for u, w in self._adj[v].items() ]
 
-        return [ self.Edge(u, v, u[v]) for u in self._adj.keys() 
-                if self._adj[u][v] != self._default_edge_weight ] #TODO:  #don't like it bc it ignores the edges that are implicitly set to default value and is slow
-    
+        return [ 
+                self.Edge(u, v, incoming_dict[v])
+                for u, incoming_dict in self._adj.items() 
+                if v in incoming_dict.keys()   #using keys to skip one func call bc we know that IncomingDict has to call keys()
+        ]
 
     #Only call if you really have to.
     def change_default_weight(self, new_weight: float) -> None:
@@ -138,7 +138,10 @@ class Graph:
             incomingDict.set_default_value(new_weight)
 
         self._adj = new_adj
-        self._default_edge_weight = new_weight
+        #self._default_edge_weight = new_weight
+
+    def get_default_edge_weight(self) -> float:
+        ...
 
 
 
@@ -164,8 +167,14 @@ class IncomingDict(dict):
             return self._default_value  
 
     def __contains__(self, __key: object) -> bool:
+        """
+        Because default implementation relies on __getitem__.
+        If it raises KeyError, it indicates that the key is not part of the dictionary.
+        But IncomingDict __getitem__ never raises KeyError it only returns the default value for nonexistent keys.
+        So we need to use in keys() to check wether or not key belongs to the dict.
+        """
         return __key in self.keys()
-
+    
 
     def set_default_value(self, new_value: float) -> None:
         self._default_value = new_value

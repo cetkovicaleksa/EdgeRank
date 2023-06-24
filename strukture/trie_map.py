@@ -15,16 +15,15 @@ class TrieMap:
     
     #TODO:load and save trie_map
     @staticmethod
-    def load_trie_map(path) -> Union[Dict[str, Trie], Dict, FileNotFoundError]:
+    def load_trie_map(path, statusi_lista: List[Status] = []) -> Union[Dict[str, Trie], Dict]:
         try:
             with open(path, "rb") as file:
                 new_trie_map = pickle.load(file)
             return new_trie_map
         except FileNotFoundError:
-            raise #temporary
-        except EOFError:
-            return TrieMap.new_trie_map()
-            
+            tm = TrieMap.new_trie_map(statusi_lista)
+            TrieMap.save_trie_map(tm, path)
+            return tm
         
 
     @staticmethod
@@ -33,4 +32,4 @@ class TrieMap:
             with open(path, "wb") as file:
                 pickle.dump(trie_map, file)
         except FileNotFoundError:
-            raise FileNotFoundError                 
+            raise                

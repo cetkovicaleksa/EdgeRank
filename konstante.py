@@ -1,4 +1,5 @@
 from entiteti.weights import *
+from data.data_tools.paths import Paths, PklPaths
 
 
 REACTION_WEIGHTS = RW = ReactionWeights(1, 2, 1.5, 1.5, 1.5, 1.5, 3)
@@ -8,20 +9,25 @@ TIME_DECAY_WEIGHTS = TDW = TimeDecayWeights(0.5, 18, 10, 7, 3, 2, 0.3) #decay ra
 
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
-FRIENDS_CSV = 'data/dataset/friends.csv'
+ORIGINAL_PATHS = OP = Paths(
+    'data/dataset/friends.csv',
+    'data/dataset/original_statuses.csv',
+    'data/dataset/original_shares.csv',
+    'data/dataset/original_comments.csv',
+    'data/dataset/original_reactions.csv'
+)
 
-ORIGINAL_COMMENTS_CSV = 'data/dataset/original_comments.csv'
-ORIGINAL_REACTIONS_CSV = 'data/dataset/original_reactions.csv'
-ORIGINAL_SHARES_CSV = 'data/dataset/original_shares.csv'
-ORIGINAL_STATUSES_CSV = 'data/dataset/original_statuses.csv'
+TEST_PATHS = TP = Paths(
+    'data/dataset/friends.csv',
+    'data/dataset/test_statuses.csv',
+    'data/dataset/test_shares.csv',
+    'data/dataset/test_comments.csv',
+    'data/dataset/test_reactions.csv'
+)
 
-TEST_COMMENTS_CSV = 'data/dataset/test_comments.csv'
-TEST_REACTIONS_CSV = 'data/dataset/test_reactions.csv'
-TEST_SHARES_CSV = 'data/dataset/test_shares.csv'
-TEST_STATUSES_CSV = 'dataset/test_statuses.csv'
-
-TRIE_MAP_PKL = 'data/pickled/trie_map.pkl'
-GRAPH_PKL = 'data/pickled/affinity_graph.pkl'
-
+PICKLE_PATHS = PP = PklPaths(
+    'data/pickled/trie_map.pkl',
+    'data/pickled/affinity_graph.pkl'
+)
 
 

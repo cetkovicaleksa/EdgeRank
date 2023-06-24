@@ -4,6 +4,7 @@ from strukture.trie_map import TrieMap
 from data.data_tools.data_handler import DataHandler
 from data.data_tools.stopwatch import StopwatchMaker
 import time
+from konstante import ORIGINAL_PATHS
 
 @StopwatchMaker #('something', loading_msg='...', end_msg='Loaded in: ')
 def main(*something):
@@ -13,9 +14,11 @@ def main(*something):
 
 
 if __name__ == "__main__":
-    print(main)
-    #main('something')
-    print(main)
+    stat = DataHandler.load_statuses(ORIGINAL_PATHS.statuses)
+    print(len(stat[0]))
+    for s in stat[0]:
+        print(s.status_author, stat[1][s.status_id].status_author)
+
     # status_list = [
     # "12345",
     # "Hello, Hello Help hello world world!",

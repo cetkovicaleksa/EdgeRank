@@ -56,7 +56,7 @@ def load_comments(path):
 
 def load_statuses(path):
     extracted_statuses = []
-    with open(path) as file:
+    with open(path, encoding='utf-8') as file:
         lines = file.readlines()
         comment = ""
         paired_ellipses = True

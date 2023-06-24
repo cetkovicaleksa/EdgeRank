@@ -1,14 +1,17 @@
-from typing import Union, Dict
-from data.data_tools.paths import Paths, PklPaths
-from konstante import (
-    FRIENDS_CSV, ORIGINAL_STATUSES_CSV, ORIGINAL_SHARES_CSV,
-    ORIGINAL_COMMENTS_CSV, ORIGINAL_REACTIONS_CSV, 
-    TEST_STATUSES_CSV, TEST_SHARES_CSV, TEST_COMMENTS_CSV,
-    TEST_REACTIONS_CSV, TRIE_MAP_PKL, GRAPH_PKL
+from typing import Dict, Union, Tuple, List
+from konstante import ORIGINAL_PATHS, TEST_PATHS, PICKLE_PATHS
+from data.data_tools.parse_files import (
+    load_comments, load_reactions, load_shares, load_statuses
 )
-from data.data_tools.parse_files import *
 from strukture.trie_map import TrieMap as tm 
 from strukture.trie import Trie
+from strukture.graph import Graph
+
+from entiteti.status import Status
+from entiteti.comment import Comment
+from entiteti.share import Share
+from entiteti.reaction import Reaction
+
 import time
 import pickle
 
@@ -16,18 +19,17 @@ import pickle
 
 class DataHandler:
         
-    __original_paths = Paths(FRIENDS_CSV, ORIGINAL_STATUSES_CSV, ORIGINAL_SHARES_CSV,
-                           ORIGINAL_COMMENTS_CSV, ORIGINAL_REACTIONS_CSV)
+    __original_paths = ORIGINAL_PATHS
     
-    __test_paths = Paths(FRIENDS_CSV, TEST_STATUSES_CSV, TEST_SHARES_CSV,
-                       TEST_COMMENTS_CSV, TEST_REACTIONS_CSV)
+    __test_paths = TEST_PATHS
     
-    __pkl_paths = PklPaths(TRIE_MAP_PKL, GRAPH_PKL)
+    __pkl_paths = PICKLE_PATHS
 
     def __init__(self) -> None:
         pass
 
-    
+    def __call__(self): #load all the data and pickled and return it
+        ...
     
     def load_original_data(self):
         c = self
@@ -68,23 +70,65 @@ class DataHandler:
     def save_trie_map(trie_map: Dict[str, Trie], path: str):
         return tm.save_trie_map(trie_map, path)
     
-    # @staticmethod
-    # def load_graph(path: str):
-    #     pass
+    @staticmethod
+    def load_graph(path: str) -> Graph:
+        try:
+            with open(path, "rb") as file:
+                graph = pickle.load(file)
+        except FileNotFoundError:
+            graph = DataHandler.new_graph(...) #init_affinity_graph(friends_dir, statuses, comments_dir, reactions_dir, shares_dir)
+            with open(path, "wb") as file:
+                pickle.dump(graph, file)
+        return graph
 
-    # @staticmethod
-    # def save_graph(graph, path: str):
-    #     try:
-    #         with open(path, "wb") as file:
-    #             pickle.dump(graph, file)
-    #     except FileNotFoundError:
-    #         raise
 
+    @staticmethod
+    def save_graph(graph, path: str) -> Union[FileNotFoundError, None]:
+        try:
+            with open(path, "wb") as file:
+                pickle.dump(graph, file)
+        except FileNotFoundError:
+            raise
+
+    @staticmethod
+    def new_graph() -> Graph:
+        ...
+
+
+
+
+
+    @staticmethod
+    def load_friends(path):
+        ...
+
+    @staticmethod
+    def load_statuses(path) -> Tuple[List[Status], Dict[str, Status]]:
+        statuses_dict = {}   
+        def init(status_list):
+            status = Status(status_list)
+            statuses_dict[status.status_id] = status
+            return status
+
+        statuses_list = [ init(status_list) for status_list in load_statuses(path) ]
+
+        return statuses_list, statuses_dict
+    
+    @staticmethod
+    def load_comments(path) -> List[Comment]:
+        return [ Comment(comment_list) for comment_list in load_comments(path) ]
+
+    @staticmethod
+    def load_shares(path) -> List[Share]:
+        return [ Share(share_list) for share_list in load_shares(path)]
+
+    @staticmethod
+    def load_reactions(path) -> List[Reaction]:
+        return [ Reaction(reaction_list) for reaction_list in load_reactions(path) ]
     
 
 
 
     
-
 
     
