@@ -10,7 +10,11 @@ class Reaction:
 
 
     @staticmethod
-    def csv(reaction: 'Reaction', return_string: bool = False) -> Union[list, str]:
-        ret = [reaction.status_id, reaction.reaction_type, reaction.who_reacted, strftime(DATE_FORMAT, reaction.date_reacted)]
+    def csv(reaction: 'Reaction', return_string: bool = True) -> Union[list, str]:
+        ret = [
+            reaction.status_id, reaction.reaction_type,
+            reaction.who_reacted,
+            strftime(DATE_FORMAT,reaction.date_reacted)
+            ]
         return ','.join(ret) + '\n' if return_string else ret
     

@@ -15,7 +15,7 @@ class TrieMap:
         trie_list = Trie.new_trie_from_status(*statusi_lista)
         dict_ = {}
         for i in range(len(statusi_lista)):
-            dict_[statusi_lista[i]] = trie_list[i]
+            dict_[statusi_lista[i].status_id] = trie_list[i]
         return dict_
         #return { status.status_id : trie    for status, trie in (statusi_lista, Trie.new_trie_from_status(*statusi_lista)) }
     

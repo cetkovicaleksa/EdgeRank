@@ -34,7 +34,7 @@ class Status:
 
 
     @staticmethod
-    def csv(status: 'Status', return_string: bool = False) -> Union[list, str]:
+    def csv(status: 'Status', return_string: bool = True) -> Union[list, str]:
 
         ret = [
             status.status_id,

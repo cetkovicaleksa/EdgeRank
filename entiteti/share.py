@@ -9,8 +9,12 @@ class Share:
 
 
     @staticmethod
-    def csv(share: 'Share', return_string: bool = False) -> Union[list, str]:
-        ret = [share.status_id, share.who_shared, strftime(DATE_FORMAT, share.date_shared)]
+    def csv(share: 'Share', return_string: bool = True) -> Union[list, str]:
+        ret = [
+            share.status_id,
+            share.who_shared,
+            strftime(DATE_FORMAT, share.date_shared)
+            ]
         return ','.join(ret) + '\n' if return_string else ret
         
 

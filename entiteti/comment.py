@@ -29,7 +29,7 @@ class Comment:
 
 
     @staticmethod
-    def csv(comment: 'Comment', return_string: bool = False) -> Union[list, str]:
+    def csv(comment: 'Comment', return_string: bool = True) -> Union[list, str]:
         ret = [
             comment.comment_id,
             comment.status_id,

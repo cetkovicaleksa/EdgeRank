@@ -2,8 +2,10 @@ from typing import Dict, Union, Tuple, List, Set
 from data.data_tools.stopwatch import StopwatchMessageMaker, StopwatchMaker
 from konstante import ORIGINAL_PATHS, TEST_PATHS, PICKLE_PATHS, DATE_FORMAT
 from data.data_tools.parse_files import (
-    load_comments, load_reactions, load_shares, load_statuses, adjust_date_time
+    load_comments, load_reactions, load_shares, load_statuses, adjust_date_time,
+    get_statuses_header, get_share_header, get_comment_header, get_reaction_header
 )
+from pretraga.affinity import make_affinity_graph
 from strukture.trie_map import TrieMap as tm 
 from strukture.trie import Trie
 from strukture.graph import Graph
@@ -37,7 +39,8 @@ class DataHandler:
         statuses_list, statuses_dict = statuses
 
         trie = self.load_trie_from_default(statuses_list)
-        return trie, friends, statuses, shares, comments, reactions
+        graph = None #self.load_graph_from_default(friends, statuses, shares, comments, reactions)
+        return friends, statuses, shares, comments, reactions, trie, graph
 
 
     def load_original_data(self):
@@ -48,7 +51,6 @@ class DataHandler:
         """
         Adjusts the dates of test data and then loads them.
         """
-        #TODO: update dates with parse_files
         tp = self.__test_paths
         StopwatchMaker(adjust_date_time)(tp.statuses, tp.comments, tp.shares, tp.reactions, loading_msg = "Updating dates for test data...", end_msg = "Dates updated in: ")
         return StopwatchMaker(self.load_data)(tp.friends, tp.statuses, tp.shares, tp.comments, tp.reactions, loading_msg = ''.center(80, '=') + "\nLoading test data: :)\n", end_msg = ''.center(80, '=')+"\nTest data loaded in: ")
@@ -60,8 +62,8 @@ class DataHandler:
     def save_trie_to_default(self, trie_map):
         return self.save_trie_map(trie_map, self.__pkl_paths.trie)
     
-    def load_graph_from_default(self):
-        return self.load_graph(self.__pkl_paths.graph)
+    def load_graph_from_default(self, friends, statuses, shares, comments, reactions):
+        return self.load_graph(friends, statuses, shares, comments, reactions,self.__pkl_paths.graph)
     
     def save_graph_to_default(self, graph):
         return self.save_graph(graph, self.__pkl_paths.graph)
@@ -105,12 +107,12 @@ class DataHandler:
         return tm.save_trie_map(trie_map, path)
     
     @staticmethod
-    def load_graph(path: str) -> Graph:
+    def load_graph(friends, statuses, shares, comments, reactions, path: str) -> Graph:
         try:
             with open(path, "rb") as file:
                 graph = pickle.load(file)
         except FileNotFoundError:
-            graph = DataHandler.new_graph(...)
+            graph = make_affinity_graph(friends, statuses, comments, shares, reactions)
             with open(path, "wb") as file:
                 pickle.dump(graph, file)
         return graph
@@ -137,7 +139,7 @@ class DataHandler:
     @StopwatchMessageMaker("Loading friends...", "Friends loaded in: ")
     def load_friends(path: str) -> List[Person]:
         friends: List[Person] = []
-        with open(path, 'r', encoding="utf-8") as file:
+        with open(path, 'r', encoding="latin-1") as file:
             for line in file.readlines()[1:]:
                 row_list: List[str] = line.split(',')
                 friends.append( Person(row_list[0], int(row_list[1]), set(row_list[2:])) ) 
@@ -195,10 +197,22 @@ class DataHandler:
 
         return [ init(reaction_list) for reaction_list in load_reactions(path) ]
     
-    #TODO: add saving for entities
-    
 
+    #saving friends has a problem 
+    @staticmethod
+    def save_entity(entity_list: List[object], path: str): #could do something similar to loading but no time
+        clazz = type(entity_list[0])
 
+        headers = {
+            Status : get_statuses_header, Share : get_share_header,
+            Comment : get_comment_header, Reaction : get_reaction_header,
+            Person : lambda:"person,number_of_friends,friends"
+        }
+
+        with open(path, 'w', encoding='latin-1', newline='') as file:
+            file.write(headers[clazz]() + "\n")
+            for entity in entity_list:
+                file.write(entity.csv(entity))
 
     
 
