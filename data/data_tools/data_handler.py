@@ -1,7 +1,7 @@
 from typing import Dict, Union, Tuple, List, Set
 from konstante import ORIGINAL_PATHS, TEST_PATHS, PICKLE_PATHS, DATE_FORMAT
 from data.data_tools.parse_files import (
-    load_comments, load_reactions, load_shares, load_statuses
+    load_comments, load_reactions, load_shares, load_statuses, adjust_date_time
 )
 from strukture.trie_map import TrieMap as tm 
 from strukture.trie import Trie
@@ -16,7 +16,6 @@ from entiteti.person import Person
 import time
 from time import strptime
 import pickle
-from data.data_tools.stopwatch import StopwatchMaker
 
 
 
@@ -36,15 +35,18 @@ class DataHandler:
         ...
     
     def load_original_data(self):
-        c = self
-        return c.load_data(c.__original_paths.friends, c.__original_paths.statuses,
-                             c.__original_paths.shares, c.__original_paths.comments, c.__original_paths.reactions)
+        op = self.__original_paths
+        return self.load_data(op.friends, op.statuses,
+                              op.shares, op.comments, op.reactions)
         
     def load_test_data(self):
-        ... #TODO: update dates with parse_files
-        c = self
-        return c.load_data(c.__test_paths.friends, c.__test_paths.statuses, 
-                             c.__test_paths.shares, c.__test_paths.comments, c.__test_paths.reactions)
+        """
+        Adjusts the dates of test data and then loads them.
+        """
+        #TODO: update dates with parse_files
+        tp = self.__test_paths
+        #adjust_date_time(tp.statuses, tp.comments, tp.shares, tp.reactions)
+        return self.load_data(tp.friends, tp.statuses, tp.shares, tp.comments, tp.reactions)
     
     
     def load_trie_from_default(self):
@@ -61,8 +63,30 @@ class DataHandler:
 
 
     @staticmethod
-    def load_data(friends_dir, statuses_dir, shares_dir, comments_dir, reactions_dir):
-        pass
+    def load_data(
+        friends_dir: str,
+        statuses_dir: str,
+        shares_dir: str,
+        comments_dir: str,
+        reactions_dir: str
+        ) -> Union[
+              Tuple[
+                    List[Person],
+                    Tuple[List[Status], Dict[str, Status]],
+                    List[Share],
+                    List[Comment],
+                    List[Reaction]
+                ],
+              FileNotFoundError
+             ]:
+        
+        fren = DataHandler.load_friends(friends_dir)
+        statuses = DataHandler.load_statuses(statuses_dir)
+        shares = DataHandler.load_shares(shares_dir)
+        comments = DataHandler.load_comments(comments_dir)
+        reactions = DataHandler.load_reactions(reactions_dir)
+
+        return fren, statuses, shares, comments, reactions
 
 
 

@@ -4,7 +4,7 @@ from strukture.trie_map import TrieMap
 from data.data_tools.data_handler import DataHandler
 from data.data_tools.stopwatch import StopwatchMaker
 import time
-from konstante import ORIGINAL_PATHS
+from konstante import ORIGINAL_PATHS, TEST_PATHS
 
 @StopwatchMaker #('something', loading_msg='...', end_msg='Loaded in: ')
 def main(*something):
@@ -14,13 +14,16 @@ def main(*something):
 
 
 if __name__ == "__main__":
-    print(DataHandler.load_statuses)
-    s = StopwatchMaker(DataHandler.load_friends)(ORIGINAL_PATHS.friends, loading_msg = "Loading frends: ", end_msg = "Loaded in: ")
+    #s = StopwatchMaker(DataHandler.load_comments)('bla', loading_msg = "Loading...", end_msg = "Loaded in: ")
     # stat = DataHandler.load_friends(ORIGINAL_PATHS.friends, loading_msg = "Loading...", end_msg = "Loaded in: ")
+    dh = DataHandler()
+    data = StopwatchMaker(dh.load_original_data)(loading_msg = "Loading...", end_msg = "Data loaded in: ")
     pass
-    for i in range(10):
-        print(s[i].name, s[i].number_of_friends, len(s[i].friends), sep='/')
-    # for s in stat[0]:
+
+    # for i in range(10):
+    #     print(s[i].comment_author)
+    # print(len(s))
+    # # for s in stat[0]:
     #     print(s.status_author, stat[1][s.status_id].status_author)
     #print( len(stat[1].keys()) == len(stat[0]) )
 

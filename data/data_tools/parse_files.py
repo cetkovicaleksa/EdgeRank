@@ -56,7 +56,7 @@ def load_comments(path):
 
 def load_statuses(path):
     extracted_statuses = []
-    with open(path, encoding='utf-8') as file:
+    with open(path, encoding='latin1') as file:
         lines = file.readlines()
         comment = ""
         paired_ellipses = True
@@ -186,6 +186,7 @@ def adjust_date_time(statuses_path, comments_path, shares_path, reactions_path):
         for status in statuses:
             status_datetime = status[4]
             new_status_datetime = modify_date_to_recent(status_datetime)
+            status[4] = new_status_datetime                                   #!!!!!!!!!!!!!!!
             status_to_datetime[status[0].strip()] = new_status_datetime
             file.write(",".join(status) + "\n")
 
