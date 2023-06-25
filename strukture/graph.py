@@ -243,7 +243,7 @@ def test_incoming_dict():
     print(my_dict)
 
 
-# Run the test
-test_incoming_dict()
+if __name__ == "__main__":
+    test_incoming_dict()
 
 

@@ -11,10 +11,12 @@ from entiteti.status import Status
 from entiteti.comment import Comment
 from entiteti.share import Share
 from entiteti.reaction import Reaction
+from entiteti.person import Person
 
 import time
 from time import strptime
 import pickle
+from data.data_tools.stopwatch import StopwatchMaker
 
 
 
@@ -98,20 +100,24 @@ class DataHandler:
         ...
 
 
-
+#-- loading and saving entities --
 
 
     @staticmethod
-    def load_friends(path: str) -> any:
-        def load(path):
-            ...
+    def load_friends(path: str) -> List[Person]:
+        friends: List[Person] = []
+        with open(path, 'r', encoding="utf-8") as file:
+            for line in file.readlines()[1:]:
+                row_list: List[str] = line.split(',')
+                friends.append( Person(row_list[0], int(row_list[1]), set(row_list[2:])) ) 
 
-        def init(friends_list):
-            ...
+        return friends
+        # def init(friends_list):
+        #     friends_list[1]: int = int( friends_list[1] )
+        #     friends_list[2]: set = set( ','.split(friends_list[2]) )
+        #     return Person(*friends_list) 
 
-        return [ init(friends_list) for friends_list in load(path)]
-        
-        
+        #return [ init(friends_list) for friends_list in load(path)]
 
     @staticmethod
     def load_statuses(path: str) -> Tuple[List[Status], Dict[str, Status]]:
@@ -144,7 +150,7 @@ class DataHandler:
             share_list[2]: time.struct_time = strptime(share_list[2], DATE_FORMAT)
             return Share(share_list)
 
-        return [ init(share_list) for share_list in load_shares(path)]
+        return [ init(share_list) for share_list in load_shares(path) ]
 
     @staticmethod
     def load_reactions(path: str) -> List[Reaction]:

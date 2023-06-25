@@ -14,8 +14,12 @@ def main(*something):
 
 
 if __name__ == "__main__":
-    stat = DataHandler.load_reactions(ORIGINAL_PATHS.reactions)
+    print(DataHandler.load_statuses)
+    s = StopwatchMaker(DataHandler.load_friends)(ORIGINAL_PATHS.friends, loading_msg = "Loading frends: ", end_msg = "Loaded in: ")
+    # stat = DataHandler.load_friends(ORIGINAL_PATHS.friends, loading_msg = "Loading...", end_msg = "Loaded in: ")
     pass
+    for i in range(10):
+        print(s[i].name, s[i].number_of_friends, len(s[i].friends), sep='/')
     # for s in stat[0]:
     #     print(s.status_author, stat[1][s.status_id].status_author)
     #print( len(stat[1].keys()) == len(stat[0]) )
