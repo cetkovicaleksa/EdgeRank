@@ -1,5 +1,5 @@
-from typing import Dict, Union, Tuple, List
-from konstante import ORIGINAL_PATHS, TEST_PATHS, PICKLE_PATHS
+from typing import Dict, Union, Tuple, List, Set
+from konstante import ORIGINAL_PATHS, TEST_PATHS, PICKLE_PATHS, DATE_FORMAT
 from data.data_tools.parse_files import (
     load_comments, load_reactions, load_shares, load_statuses
 )
@@ -13,7 +13,9 @@ from entiteti.share import Share
 from entiteti.reaction import Reaction
 
 import time
+from time import strptime
 import pickle
+
 
 
 
@@ -37,6 +39,7 @@ class DataHandler:
                              c.__original_paths.shares, c.__original_paths.comments, c.__original_paths.reactions)
         
     def load_test_data(self):
+        ... #TODO: update dates with parse_files
         c = self
         return c.load_data(c.__test_paths.friends, c.__test_paths.statuses, 
                              c.__test_paths.shares, c.__test_paths.comments, c.__test_paths.reactions)
@@ -63,8 +66,8 @@ class DataHandler:
 
 
     @staticmethod
-    def load_trie_map(path: str):
-        return tm.load_trie_map(path)
+    def load_trie_map(path: str, statusi_lista: List[Status] = []):
+        return tm.load_trie_map(path, statusi_lista)
 
     @staticmethod
     def save_trie_map(trie_map: Dict[str, Trie], path: str):
@@ -76,7 +79,7 @@ class DataHandler:
             with open(path, "rb") as file:
                 graph = pickle.load(file)
         except FileNotFoundError:
-            graph = DataHandler.new_graph(...) #init_affinity_graph(friends_dir, statuses, comments_dir, reactions_dir, shares_dir)
+            graph = DataHandler.new_graph(...)
             with open(path, "wb") as file:
                 pickle.dump(graph, file)
         return graph
@@ -99,13 +102,25 @@ class DataHandler:
 
 
     @staticmethod
-    def load_friends(path):
-        ...
+    def load_friends(path: str) -> any:
+        def load(path):
+            ...
+
+        def init(friends_list):
+            ...
+
+        return [ init(friends_list) for friends_list in load(path)]
+        
+        
 
     @staticmethod
-    def load_statuses(path) -> Tuple[List[Status], Dict[str, Status]]:
+    def load_statuses(path: str) -> Tuple[List[Status], Dict[str, Status]]:
         statuses_dict = {}   
+
         def init(status_list):
+            status_list[6:]: int = [ int(num) for num in status_list[6:]]
+            status_list[4]: time.struct_time = strptime(status_list[4], DATE_FORMAT)
+
             status = Status(status_list)
             statuses_dict[status.status_id] = status
             return status
@@ -115,16 +130,31 @@ class DataHandler:
         return statuses_list, statuses_dict
     
     @staticmethod
-    def load_comments(path) -> List[Comment]:
-        return [ Comment(comment_list) for comment_list in load_comments(path) ]
+    def load_comments(path: str) -> List[Comment]:
+        def init(comment_list):
+            comment_list[6:]: int = [ int(num) for num in comment_list[6:] ]
+            comment_list[5]: time.struct_time = strptime(comment_list[5], DATE_FORMAT)
+            return Comment(comment_list)
+        
+        return [ init(comment_list) for comment_list in load_comments(path) ]
 
     @staticmethod
-    def load_shares(path) -> List[Share]:
-        return [ Share(share_list) for share_list in load_shares(path)]
+    def load_shares(path: str) -> List[Share]:
+        def init(share_list):
+            share_list[2]: time.struct_time = strptime(share_list[2], DATE_FORMAT)
+            return Share(share_list)
+
+        return [ init(share_list) for share_list in load_shares(path)]
 
     @staticmethod
-    def load_reactions(path) -> List[Reaction]:
-        return [ Reaction(reaction_list) for reaction_list in load_reactions(path) ]
+    def load_reactions(path: str) -> List[Reaction]:
+        def init(reaction_list):
+            reaction_list[3]: time.struct_time = strptime(reaction_list[3], DATE_FORMAT)
+            return Reaction(reaction_list)
+
+        return [ init(reaction_list) for reaction_list in load_reactions(path) ]
+    
+    #TODO: add saving for entities
     
 
 

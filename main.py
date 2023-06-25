@@ -14,10 +14,11 @@ def main(*something):
 
 
 if __name__ == "__main__":
-    stat = DataHandler.load_statuses(ORIGINAL_PATHS.statuses)
-    print(len(stat[0]))
-    for s in stat[0]:
-        print(s.status_author, stat[1][s.status_id].status_author)
+    stat = DataHandler.load_reactions(ORIGINAL_PATHS.reactions)
+    pass
+    # for s in stat[0]:
+    #     print(s.status_author, stat[1][s.status_id].status_author)
+    #print( len(stat[1].keys()) == len(stat[0]) )
 
     # status_list = [
     # "12345",

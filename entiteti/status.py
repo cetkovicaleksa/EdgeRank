@@ -28,7 +28,7 @@ class Status:
         ) = status_list
 
 
-        self.status_date_published = strptime(self.status_date_published, DATE_FORMAT)
+        #self.status_date_published = strptime(self.status_date_published, DATE_FORMAT)
 
 
 

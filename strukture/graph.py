@@ -6,8 +6,10 @@ class Graph:
     """Implementacija usmjerenog grafa gdje svaki vertex sadrzi kolekiju susjednih."""
     __slots__ = "_adj", "_vertices"
 
-    class Edge(namedtuple("Edge", "outgoing incoming value")): #maby make it hashable for ordered pair (outgoing, incoming)
-        pass
+    class Edge(namedtuple("Edge", "outgoing incoming value")):
+        def __hash__(self) -> int:
+            return hash((self.outgoing, self.incoming))
+        
     class InvalidVertexException(Exception):
         pass
     class VertexAlreadyExistsException(Exception):
@@ -36,18 +38,19 @@ class Graph:
     def edge_count(self) -> int:
         return sum( [len(x) for x in self._adj.values()] )
 
-    def edges(self) -> List['Graph.Edge']: #can't be set because Graph.Edge is not hashable in the desirable way (1, 2) <=> (2,1)
-        return [ 
+    def edges(self) -> Set['Graph.Edge']: #Returns a set only to match the vertices function
+        return { 
                 self.Edge(outgoing, incoming, value)
                 for outgoing, incoming_dict in self._adj.items()
                 for incoming, value in incoming_dict.items()
-        ]
+        }
 
 
     def get_edge(self, u, v) -> Union[float, 'Graph.InvalidVertexException']:
         self._validate_vertex(u)
         self._validate_vertex(v)        
         return self._adj[u][v]  #will return the default value if the edge doesn't exist between u and v
+        #if u didn't exist the dict will be expanded for another nested dict u:{}, but if v didn't exist the nested dict will not change
 
 
     def insert_vertex(self, v: Hashable) -> Union[None, 'Graph.VertexAlreadyExistsException']:
@@ -141,7 +144,15 @@ class Graph:
         #self._default_edge_weight = new_weight
 
     def get_default_edge_weight(self) -> float:
-        ...
+        try:
+            incoming: IncomingDict = self._adj[ next(iter(self._adj)) ]
+            weight: float = incoming.get_default_value()
+        except StopIteration:
+            incoming: IncomingDict = self._adj['aki']
+            weight: float = incoming.get_default_value()
+            del self._adj['aki']
+        
+        return weight
 
 
 
@@ -163,7 +174,7 @@ class IncomingDict(dict):
     def __getitem__(self, __key: Any) -> Any:
         try:
             return super().__getitem__(__key)
-        except KeyError:            
+        except KeyError:          
             return self._default_value  
 
     def __contains__(self, __key: object) -> bool:
@@ -173,7 +184,7 @@ class IncomingDict(dict):
         But IncomingDict __getitem__ never raises KeyError it only returns the default value for nonexistent keys.
         So we need to use in keys() to check wether or not key belongs to the dict.
         """
-        return __key in self.keys()
+        return __key in self.keys()  #this may be the default behaviour of contains??!?
     
 
     def set_default_value(self, new_value: float) -> None:
@@ -185,3 +196,54 @@ class IncomingDict(dict):
 
 class OutgoingDict(defaultdict):
     pass    
+
+
+
+
+
+#a simple test i stole from chatgpt :)
+def test_incoming_dict():
+    # Create an IncomingDict instance with default value 0
+    my_dict = IncomingDict(0)
+
+    # Add some key-value pairs
+    my_dict["a"] = 10
+    my_dict["b"] = 20
+    my_dict["c"] = 0
+
+    # Test membership
+    assert "a" in my_dict
+    assert "b" in my_dict
+    assert "c" in my_dict
+    assert "d" not in my_dict
+
+    # Access existing keys
+    assert my_dict["a"] == 10
+    assert my_dict["b"] == 20
+    assert my_dict["c"] == 0
+
+    # Access non-existent key (using default value)
+    assert my_dict["d"] == 0
+
+    # Update default value
+    my_dict.set_default_value(100)
+    my_dict["c"] = 100
+
+    # Access non-existent key with updated default value
+    assert my_dict["d"] == 100
+
+    # Delete a key
+    del my_dict["b"]
+
+    # Test membership and default value after deletion
+    assert "b" not in my_dict
+    assert my_dict["b"] == 100
+
+    print("All tests passed successfully!")
+    print(my_dict)
+
+
+# Run the test
+test_incoming_dict()
+
+

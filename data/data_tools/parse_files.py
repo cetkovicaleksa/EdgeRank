@@ -5,7 +5,7 @@ import time
 
 def load_comments(path):
     output_data = []
-    with open(path) as file:
+    with open(path, encoding='utf-8') as file:
         lines = file.readlines()
         comment = ""
         found_open_ellipsis = False
@@ -154,7 +154,7 @@ def get_comment_header():
 
 def load_shares(path):
     shares = []
-    with open(path) as file:
+    with open(path, encoding="utf-8") as file:
         lines = file.readlines()
         for line in lines[1:]:
             shares.append(line.strip().split(","))
@@ -163,7 +163,7 @@ def load_shares(path):
 
 def load_reactions(path):
     reactions = []
-    with open(path) as file:
+    with open(path, encoding="utf-8") as file:
         lines = file.readlines()
         for line in lines[1:]:
             reactions.append(line.strip().split(","))

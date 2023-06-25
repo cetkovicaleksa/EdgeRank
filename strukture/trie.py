@@ -1,6 +1,6 @@
-from entiteti.status import Status
+from entiteti.status import Status #nesto nije dobro?!
 import re
-from typing import List, Union
+from typing import Dict, List, Union
 
 
 class Trie:
@@ -38,7 +38,7 @@ class Trie:
         curr_node = self._root
         for char in word:
 
-            if curr_node.children.setdefault(char, None) is None: #da ne bi na svakom karakteru pravili novi nepotreban Node
+            if char not in curr_node.children:
                 curr_node.children[char] = Trie.Node()
 
             curr_node = curr_node.children[char]
@@ -55,16 +55,16 @@ class Trie:
 
 
     def add_words(self, *words: List[str]) -> None:
-        word_cache = {}  #Dict(str, 'Trie.Node')
+        word_cache: Dict[str, 'Trie.Node'] = {}
 
         for word in words:
-            if word_cache.get(word, None) is not None:
+            if word in word_cache:
                 word_cache[word].num_of_repeats += 1
                 continue
 
             curr_node = self._root #moze provjeriti ako je neka rijec iz word_cache prefiks trenutne pa da ne krece od root?
             for char in word:
-                if curr_node.children.setdefault(char, None) is None:
+                if char not in curr_node.children:
                     curr_node.children[char] = Trie.Node()
 
                 curr_node = curr_node.children[char]

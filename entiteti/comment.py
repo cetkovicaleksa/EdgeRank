@@ -24,7 +24,7 @@ class Comment:
             
         ) = comment_list
 
-        self.date_commented = strptime(self.date_commented, DATE_FORMAT)
+        #self.date_commented = strptime(self.date_commented, DATE_FORMAT)
 
 
 
