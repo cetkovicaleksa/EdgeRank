@@ -17,7 +17,14 @@ if __name__ == "__main__":
     #s = StopwatchMaker(DataHandler.load_comments)('bla', loading_msg = "Loading...", end_msg = "Loaded in: ")
     # stat = DataHandler.load_friends(ORIGINAL_PATHS.friends, loading_msg = "Loading...", end_msg = "Loaded in: ")
     dh = DataHandler()
-    data = StopwatchMaker(dh.load_original_data)(loading_msg = "Loading...", end_msg = "Data loaded in: ")
+    #data = StopwatchMaker(dh.load_original_data)(loading_msg = "Loading...", end_msg = "Data loaded in: ")
+    dh.load_original_data()
+    print(DataHandler.load_data)
+    print(DataHandler.load_statuses)
+    print(dh.load_statuses)
+    
+    dh.load_statuses('data/dataset/original_statuses.csv')
+    # dh.load_statuses(TEST_PATHS.statuses)
     pass
 
     # for i in range(10):

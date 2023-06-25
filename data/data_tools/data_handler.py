@@ -1,4 +1,5 @@
 from typing import Dict, Union, Tuple, List, Set
+from data.data_tools.stopwatch import StopwatchMessageMaker
 from konstante import ORIGINAL_PATHS, TEST_PATHS, PICKLE_PATHS, DATE_FORMAT
 from data.data_tools.parse_files import (
     load_comments, load_reactions, load_shares, load_statuses, adjust_date_time
@@ -36,9 +37,8 @@ class DataHandler:
     
     def load_original_data(self):
         op = self.__original_paths
-        return self.load_data(op.friends, op.statuses,
-                              op.shares, op.comments, op.reactions)
-        
+        return self.load_data(op.friends, op.statuses, op.shares, op.comments, op.reactions)        
+
     def load_test_data(self):
         """
         Adjusts the dates of test data and then loads them.
@@ -63,6 +63,7 @@ class DataHandler:
 
 
     @staticmethod
+    @StopwatchMessageMaker("Loading data: \n", "Data loaded in: ")
     def load_data(
         friends_dir: str,
         statuses_dir: str,
@@ -124,10 +125,12 @@ class DataHandler:
         ...
 
 
+
 #-- loading and saving entities --
 
 
     @staticmethod
+    @StopwatchMessageMaker("Loading friends...", "Friends loaded in: ")
     def load_friends(path: str) -> List[Person]:
         friends: List[Person] = []
         with open(path, 'r', encoding="utf-8") as file:
@@ -144,6 +147,7 @@ class DataHandler:
         #return [ init(friends_list) for friends_list in load(path)]
 
     @staticmethod
+    @StopwatchMessageMaker("Loading statuses...", "Statuses loaded in: ")
     def load_statuses(path: str) -> Tuple[List[Status], Dict[str, Status]]:
         statuses_dict = {}   
 
@@ -160,6 +164,7 @@ class DataHandler:
         return statuses_list, statuses_dict
     
     @staticmethod
+    @StopwatchMessageMaker("Loading comments...", "Comments loaded in: ")
     def load_comments(path: str) -> List[Comment]:
         def init(comment_list):
             comment_list[6:]: int = [ int(num) for num in comment_list[6:] ]
@@ -169,6 +174,7 @@ class DataHandler:
         return [ init(comment_list) for comment_list in load_comments(path) ]
 
     @staticmethod
+    @StopwatchMessageMaker("Loading shares...", "Shares loaded in: ")
     def load_shares(path: str) -> List[Share]:
         def init(share_list):
             share_list[2]: time.struct_time = strptime(share_list[2], DATE_FORMAT)
@@ -177,6 +183,7 @@ class DataHandler:
         return [ init(share_list) for share_list in load_shares(path) ]
 
     @staticmethod
+    @StopwatchMessageMaker("Loading reactions...", "Reactions loaded in: ")
     def load_reactions(path: str) -> List[Reaction]:
         def init(reaction_list):
             reaction_list[3]: time.struct_time = strptime(reaction_list[3], DATE_FORMAT)
@@ -192,3 +199,35 @@ class DataHandler:
     
 
     
+
+
+
+
+
+
+
+
+
+
+    # backup = (self.load_statuses, self.load_friends, self.load_comments, self. load_shares, self.load_reactions, self.load_data)
+        # exception = None
+
+        # DataHandler.load_statuses = StopwatchMessageMaker("Loading statuses...", "Loaded statuses in: ")(DataHandler.load_statuses)
+        # DataHandler.load_friends = StopwatchMessageMaker("Loading friends...", "Loaded friends in: ")(DataHandler.load_friends)
+        # DataHandler.load_comments = StopwatchMessageMaker("Loading comments...", "Loaded comments in: ")(DataHandler.load_comments)
+        # DataHandler.load_shares = StopwatchMessageMaker("Loading shares...", "Loaded shares in: ")(DataHandler.load_shares)
+        # DataHandler.load_reactions = StopwatchMessageMaker("Loading reactions...", "Reactions loaded in: ")(DataHandler.load_reactions)
+        # DataHandler.load_data = StopwatchMessageMaker("Loading data: \n", "\nLoaded data in: ")(DataHandler.load_data)
+        
+        # try:
+        #     ret = self.load_data(op.friends, op.statuses,
+        #                          op.shares, op.comments, op.reactions)
+        # except Exception as e:
+        #     exception = e
+
+        # DataHandler.load_statuses, DataHandler.load_friends, DataHandler.load_comments, DataHandler.load_shares, DataHandler.load_reactions, DataHandler.load_data = backup
+
+        # if exception:
+        #     raise exception
+        
+        # return ret

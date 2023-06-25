@@ -1,9 +1,6 @@
-
-
-
-
 from typing import Any
 import time
+from functools import wraps
 
 
 class StopwatchMaker(object):
@@ -48,7 +45,38 @@ class StopwatchMaker(object):
     
 
 
+class StopwatchMessageMaker:
+    def __init__(self, loading_msg = None, end_msg = None) -> None:
+        self._loading_msg = loading_msg
+        self._end_msg = end_msg
 
+
+    def __call__(self, f) -> any:
+        lm = self._loading_msg
+        em = self._end_msg
+
+        class Stopwatch:
+            def __init__(self, f) -> None:
+                self._f = f
+            
+            def __call__(self, *args: Any, **kwds: Any) -> Any:
+
+                if lm:
+                    print(lm)
+                
+                timer = time.time()
+                ret = self._f(*args, **kwds)  #check if you are acessing the right function
+                timer = time.time() - timer
+
+                if em:
+                    print(em, end='')
+                print(timer)
+                return ret
+
+        return Stopwatch(f)
+
+                
+                
 
 
 
