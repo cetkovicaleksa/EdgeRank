@@ -1,5 +1,5 @@
 from typing import Dict, Union, Tuple, List, Set
-from data.data_tools.stopwatch import StopwatchMessageMaker
+from data.data_tools.stopwatch import StopwatchMessageMaker, StopwatchMaker
 from konstante import ORIGINAL_PATHS, TEST_PATHS, PICKLE_PATHS, DATE_FORMAT
 from data.data_tools.parse_files import (
     load_comments, load_reactions, load_shares, load_statuses, adjust_date_time
@@ -33,11 +33,16 @@ class DataHandler:
         pass
 
     def __call__(self): #load all the data and pickled and return it
-        ...
-    
+        friends, statuses, shares, comments, reactions = self.load_original_data()
+        statuses_list, statuses_dict = statuses
+
+        trie = self.load_trie_from_default(statuses_list)
+        return trie, friends, statuses, shares, comments, reactions
+
+
     def load_original_data(self):
         op = self.__original_paths
-        return self.load_data(op.friends, op.statuses, op.shares, op.comments, op.reactions)        
+        return StopwatchMaker(self.load_data)(op.friends, op.statuses, op.shares, op.comments, op.reactions, loading_msg = ''.center(80, '=') + "\nLoading original data: :)\n", end_msg = ''.center(80, '=')+"\nOriginal data loaded in: ")        
 
     def load_test_data(self):
         """
@@ -45,12 +50,12 @@ class DataHandler:
         """
         #TODO: update dates with parse_files
         tp = self.__test_paths
-        #adjust_date_time(tp.statuses, tp.comments, tp.shares, tp.reactions)
-        return self.load_data(tp.friends, tp.statuses, tp.shares, tp.comments, tp.reactions)
+        StopwatchMaker(adjust_date_time)(tp.statuses, tp.comments, tp.shares, tp.reactions, loading_msg = "Updating dates for test data...", end_msg = "Dates updated in: ")
+        return StopwatchMaker(self.load_data)(tp.friends, tp.statuses, tp.shares, tp.comments, tp.reactions, loading_msg = ''.center(80, '=') + "\nLoading test data: :)\n", end_msg = ''.center(80, '=')+"\nTest data loaded in: ")
     
     
-    def load_trie_from_default(self):
-        return self.load_trie_map(self.__pkl_paths.trie)
+    def load_trie_from_default(self, statusi_lista: List[Status] = []):
+        return self.load_trie_map(self.__pkl_paths.trie, statusi_lista)
     
     def save_trie_to_default(self, trie_map):
         return self.save_trie_map(trie_map, self.__pkl_paths.trie)
@@ -63,7 +68,6 @@ class DataHandler:
 
 
     @staticmethod
-    @StopwatchMessageMaker("Loading data: \n", "Data loaded in: ")
     def load_data(
         friends_dir: str,
         statuses_dir: str,

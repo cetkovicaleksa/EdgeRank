@@ -6,11 +6,6 @@ from data.data_tools.stopwatch import StopwatchMaker
 import time
 from konstante import ORIGINAL_PATHS, TEST_PATHS
 
-@StopwatchMaker #('something', loading_msg='...', end_msg='Loaded in: ')
-def main(*something):
-    time.sleep(5)
-    print(something)
-    return "Hello World!"
 
 
 if __name__ == "__main__":
@@ -18,12 +13,11 @@ if __name__ == "__main__":
     # stat = DataHandler.load_friends(ORIGINAL_PATHS.friends, loading_msg = "Loading...", end_msg = "Loaded in: ")
     dh = DataHandler()
     #data = StopwatchMaker(dh.load_original_data)(loading_msg = "Loading...", end_msg = "Data loaded in: ")
-    dh.load_original_data()
-    print(DataHandler.load_data)
-    print(DataHandler.load_statuses)
-    print(dh.load_statuses)
+    trie = dh.load_test_data()#.load_trie_from_default( dh.load_statuses(ORIGINAL_PATHS.statuses)[0] )
     
-    dh.load_statuses('data/dataset/original_statuses.csv')
+    
+
+    #dh.load_statuses('data/dataset/original_statuses.csv')
     # dh.load_statuses(TEST_PATHS.statuses)
     pass
 
