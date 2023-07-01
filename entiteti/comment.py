@@ -1,13 +1,13 @@
 from time import strftime, strptime
 from konstante import DATE_FORMAT
-from typing import Union
+from typing import List, Union
 
 class Comment:
     def __init__(self, comment_list) -> None:
 
         (
             self.comment_id,
-            self.status_id,
+            self.status,
             self.comment_parent_id,
             self.comment_message,
             self.comment_author,
@@ -29,13 +29,13 @@ class Comment:
 
 
     @staticmethod
-    def csv(comment: 'Comment', return_string: bool = True) -> Union[list, str]:
+    def csv(comment: 'Comment', return_string: bool = True) -> Union[List[str], str]:
         ret = [
             comment.comment_id,
-            comment.status_id,
+            comment.status.status_id,
             comment.comment_parent_id,
             comment.comment_message,
-            comment.comment_author,
+            comment.comment_author.person,
             strftime(DATE_FORMAT, comment.date_commented),
             
             comment.number_of_reactions,
@@ -48,9 +48,7 @@ class Comment:
             comment.number_of_special
         ]
 
-
-        if return_string is True:
-            ret = [str(val) for val in ret]
-            ret = ",".join(ret) + '\n'
-
-        return ret
+        for i in range(6, len(ret)):
+            ret[i] = str(ret[i])
+        
+        return ",".join(ret) + '\n' if return_string is True else ret

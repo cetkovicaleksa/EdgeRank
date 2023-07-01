@@ -1,5 +1,17 @@
-from typing import Any, List, Hashable, Set, Union
+from functools import partial
+from typing import Any, Dict, List, Hashable, Set, Union
 from collections import defaultdict, Callable, namedtuple
+
+from entiteti.person import Person
+
+
+# class IncomingDictFactory:
+#     """Class we need to make this work with pickle."""
+#     def __init__(self, default_value: float = 0) -> None:
+#         self._default_value = default_value
+
+#     def __call__(self) -> 'IncomingDict':
+#         return IncomingDict(self._default_value)
 
 
 class Graph:
@@ -20,7 +32,7 @@ class Graph:
 
 
     def __init__(self, vertices: List[Hashable], default_edge_weight: float = 0) -> None:
-        self._adj = OutgoingDict(lambda: IncomingDict(default_edge_weight))    # {  v0:{v2:weight},   v1:{v0:weight},  v2:{v1:weight, v0:weight}  }
+        self._adj = OutgoingDict( lambda: IncomingDict(default_edge_weight) )    # {  v0:{v2:weight},   v1:{v0:weight},  v2:{v1:weight, v0:weight}  }
         self._vertices = set(vertices)   #only to know if the vertex exists in the graph
 
         
@@ -60,9 +72,10 @@ class Graph:
 
     def insert_edge(self, u, v, w: float) -> Union[None, 'Graph.InvalidVertexException', 'Graph.EdgeAlreadyExistsException']:
         #Inserts a new edge from u to v if it doesn't exist already.
+        
         self._validate_vertex(u)
         self._validate_vertex(v)
-        
+
         if v in self._adj[u].keys():  #prevents overwrites, won't overwrite the edges implicitly set to default value
             raise self.EdgeAlreadyExistsException(f"Edge from '{u}' to '{v}' already exists.") 
         
@@ -153,6 +166,39 @@ class Graph:
             del self._adj['aki']
         
         return weight
+    
+
+    def __getstate__(self) -> dict: #mozda ne bi trebalo rjesavati problem u grafu ali samo tako znam
+                                    #problem je kod serializacije korisnika i anonimne funkcije u _adj (zato sto korisnici imaju reference jedni na druge)
+        state = {
+            'default_edge_weight': self.get_default_edge_weight(),
+            '_vertices': self._vertices,
+            '_adj': dict( (outgoing, dict(incoming)) for outgoing, incoming in self._adj.items() )
+        }
+      
+        #pravimo rjecnik koji mapira ime osobe na objekat osobe i u friends od osobe stavljamo imena umjesto drugih objekata osobe
+        if any( isinstance(vertex, Person) for vertex in self._vertices ):
+            state['friends_dict'] = { person.person: person for person in self._vertices }            
+
+            for person in self._vertices:
+                if isinstance(person, Person):
+                    person.friends = { friend.person for friend in person.friends }
+    
+        return state
+
+
+    def __setstate__(self, state: dict):
+        def_value = state['default_edge_weight']
+        self._adj = OutgoingDict(lambda: IncomingDict(def_value))
+        self._adj.update( (outgoing, IncomingDict(def_value, ((v, w) for v,w in incoming.items()))) for outgoing, incoming in state["_adj"].items())
+        
+        self._vertices = state['_vertices']
+        friends_dict = state.get("friends_dict", None)
+    
+        if friends_dict is None: return
+      
+        for person in self._vertices:
+            person.friends = { friends_dict[name] for name in person.friends }
 
 
 
@@ -166,9 +212,12 @@ class IncomingDict(dict):
     """
     __slots__ = "_default_value"
 
-    def __init__(self, def_value):
+    def __init__(self, def_value, items: iter = None):
         super().__init__()
         self._default_value = def_value
+
+        if items is not None:
+            self.update(items)
 
 
     def __getitem__(self, __key: Any) -> Any:
@@ -192,10 +241,17 @@ class IncomingDict(dict):
 
     def get_default_value(self) -> float:
         return self._default_value
+    
+    # def __getstate__(self):
+    #     state = self.__dict__.copy()
+    #     return state
+
+    # def __setstate__(self, state):
+    #     self.__dict__.update(state)
 
 
 class OutgoingDict(defaultdict):
-    pass    
+    pass   
 
 
 

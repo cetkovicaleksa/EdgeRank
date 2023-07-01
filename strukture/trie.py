@@ -54,7 +54,7 @@ class Trie:
         # curr_node.num_of_repeats += 1
 
 
-    def add_words(self, *words: List[str]) -> None:
+    def add_words(self, *words: List[str]) -> None:  #TODO: words is not List[str] but *args
         word_cache: Dict[str, 'Trie.Node'] = {}
 
         for word in words:

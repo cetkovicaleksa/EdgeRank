@@ -5,7 +5,7 @@ import time
 
 def load_comments(path):
     output_data = []
-    with open(path, encoding='latin-1') as file:
+    with open(path, encoding="utf-8") as file:
         lines = file.readlines()
         comment = ""
         found_open_ellipsis = False
@@ -56,7 +56,7 @@ def load_comments(path):
 
 def load_statuses(path):
     extracted_statuses = []
-    with open(path, encoding='latin-1') as file:
+    with open(path, encoding="utf-8") as file:
         lines = file.readlines()
         comment = ""
         paired_ellipses = True
@@ -154,7 +154,7 @@ def get_comment_header():
 
 def load_shares(path):
     shares = []
-    with open(path, encoding="latin1") as file:
+    with open(path, encoding="utf-8") as file:
         lines = file.readlines()
         for line in lines[1:]:
             shares.append(line.strip().split(","))
@@ -163,7 +163,7 @@ def load_shares(path):
 
 def load_reactions(path):
     reactions = []
-    with open(path, encoding="latin-1") as file:
+    with open(path, encoding="utf-8") as file:
         lines = file.readlines()
         for line in lines[1:]:
             reactions.append(line.strip().split(","))
@@ -181,7 +181,7 @@ def adjust_date_time(statuses_path, comments_path, shares_path, reactions_path):
     '''
     statuses = load_statuses(statuses_path)
     status_to_datetime = {}
-    with open(statuses_path, "w", encoding='latin-1') as file:
+    with open(statuses_path, "w", encoding="utf-8") as file:
         file.write(get_statuses_header()+"\n")
         for status in statuses:
             status_datetime = status[4]
@@ -191,21 +191,21 @@ def adjust_date_time(statuses_path, comments_path, shares_path, reactions_path):
             file.write(",".join(status) + "\n")
 
     comments = load_comments(comments_path)
-    with open(comments_path, "w") as file:
+    with open(comments_path, "w", encoding="utf-8") as file:
         file.write(get_comment_header() + "\n")
         for comment in comments:
             comment[5] = generate_datetime_after_datetime(status_to_datetime[comment[1]])
             file.write(",".join(comment) + "\n")
 
     shares = load_shares(shares_path)
-    with open(shares_path, "w") as file:
+    with open(shares_path, "w", encoding="utf-8") as file:
         file.write(get_share_header() + "\n")
         for share in shares:
             share[2] = generate_datetime_after_datetime(status_to_datetime[share[0]])
             file.write(",".join(share) + "\n")
 
     reactions = load_reactions(reactions_path)
-    with open(reactions_path, "w") as file:
+    with open(reactions_path, "w", encoding="utf-8") as file:
         file.write(get_reaction_header() + "\n")
         for reaction in reactions:
             reaction[3] = generate_datetime_after_datetime(status_to_datetime[reaction[0]])

@@ -1,4 +1,6 @@
-from typing import Dict, Union, Tuple, List, Set
+from collections import namedtuple
+import itertools
+from typing import Dict, NamedTuple, Union, Tuple, List, Set
 from data.data_tools.stopwatch import StopwatchMessageMaker, StopwatchMaker
 from konstante import ORIGINAL_PATHS, TEST_PATHS, PICKLE_PATHS, DATE_FORMAT
 from data.data_tools.parse_files import (
@@ -31,42 +33,65 @@ class DataHandler:
     
     __pkl_paths = PICKLE_PATHS
 
+    class AllData(namedtuple("AllData", "data trie graph")):
+            pass
+    class Data(namedtuple("Data", "friends_dict statuses_dict statuses_list shares_list comments_list reactions_list")):
+            pass
+
     def __init__(self) -> None:
         pass
 
     def __call__(self): #load all the data and pickled and return it
-        friends, statuses, shares, comments, reactions = self.load_original_data()
-        statuses_list, statuses_dict = statuses
+    
+        data = self.load_original_data()
+        trie = self.load_trie_from_default(data.statuses_list)
+        graph = self.load_graph_from_default(data)
+        return DataHandler.AllData(data, trie, graph)
 
-        trie = self.load_trie_from_default(statuses_list)
-        graph = None #self.load_graph_from_default(friends, statuses, shares, comments, reactions)
-        return friends, statuses, shares, comments, reactions, trie, graph
 
-
-    def load_original_data(self):
+    def load_original_data(self) -> NamedTuple('Data', [
+            ('friends_dict', Dict[str, Person]),
+            ('statuses_dict', Dict[str, Status]),
+            ('statuses_list', List[Status]),
+            ('shares_list', List[Share]),
+            ('comments_list', List[Comment]),
+            ('reactions_list', List[Reaction])
+            ]):
         op = self.__original_paths
-        return StopwatchMaker(self.load_data)(op.friends, op.statuses, op.shares, op.comments, op.reactions, loading_msg = ''.center(80, '=') + "\nLoading original data: :)\n", end_msg = ''.center(80, '=')+"\nOriginal data loaded in: ")        
+        backup = self.load_data
+        timer = StopwatchMessageMaker(loading_msg=''.center(80, '=') + "\nLoading original data: :)\n", end_msg=''.center(80, '=')+"\nOriginal data loaded in: ")(self.load_data)
+        ret = timer(op.friends, op.statuses, op.shares, op.comments, op.reactions)
+        self.load_data = backup
+        return ret        
 
-    def load_test_data(self):
+    def load_test_data(self) -> NamedTuple('Data', [
+            ('friends_dict', Dict[str, Person]),
+            ('statuses_dict', Dict[str, Status]),
+            ('statuses_list', List[Status]),
+            ('shares_list', List[Share]),
+            ('comments_list', List[Comment]),
+            ('reactions_list', List[Reaction])
+            ]):
         """
         Adjusts the dates of test data and then loads them.
         """
         tp = self.__test_paths
-        StopwatchMaker(adjust_date_time)(tp.statuses, tp.comments, tp.shares, tp.reactions, loading_msg = "Updating dates for test data...", end_msg = "Dates updated in: ")
-        return StopwatchMaker(self.load_data)(tp.friends, tp.statuses, tp.shares, tp.comments, tp.reactions, loading_msg = ''.center(80, '=') + "\nLoading test data: :)\n", end_msg = ''.center(80, '=')+"\nTest data loaded in: ")
+        #StopwatchMaker(adjust_date_time)(tp.statuses, tp.comments, tp.shares, tp.reactions, loading_msg = "Updating dates for test data...", end_msg = "Dates updated in: ")
+        return StopwatchMaker(DataHandler.load_data)(tp.friends, tp.statuses, tp.shares, tp.comments, tp.reactions, loading_msg = ''.center(80, '=') + "\nLoading test data: :)\n", end_msg = ''.center(80, '=')+"\nTest data loaded in: ")
     
     
     def load_trie_from_default(self, statusi_lista: List[Status] = []):
-        return self.load_trie_map(self.__pkl_paths.trie, statusi_lista)
+        return DataHandler.load_trie_map(self.__pkl_paths.trie, statusi_lista)
     
     def save_trie_to_default(self, trie_map):
-        return self.save_trie_map(trie_map, self.__pkl_paths.trie)
+        return DataHandler.save_trie_map(trie_map, self.__pkl_paths.trie)
     
-    def load_graph_from_default(self, friends, statuses, shares, comments, reactions):
-        return self.load_graph(friends, statuses, shares, comments, reactions,self.__pkl_paths.graph)
+    
+    def load_graph_from_default(self, data: 'DataHandler.Data'):
+        return DataHandler.load_graph(data, self.__pkl_paths.graph)
     
     def save_graph_to_default(self, graph):
-        return self.save_graph(graph, self.__pkl_paths.graph)
+        return DataHandler.save_graph(graph, self.__pkl_paths.graph)
 
 
     @staticmethod
@@ -76,25 +101,15 @@ class DataHandler:
         shares_dir: str,
         comments_dir: str,
         reactions_dir: str
-        ) -> Union[
-              Tuple[
-                    List[Person],
-                    Tuple[List[Status], Dict[str, Status]],
-                    List[Share],
-                    List[Comment],
-                    List[Reaction]
-                ],
-              FileNotFoundError
-             ]:
+        ) -> 'DataHandler.Data':        
         
         fren = DataHandler.load_friends(friends_dir)
-        statuses = DataHandler.load_statuses(statuses_dir)
-        shares = DataHandler.load_shares(shares_dir)
-        comments = DataHandler.load_comments(comments_dir)
-        reactions = DataHandler.load_reactions(reactions_dir)
+        statuses_dict, statuses_list = DataHandler.load_statuses(fren, statuses_dir)
+        shares = DataHandler.load_shares(fren, statuses_dict, shares_dir)
+        comments = DataHandler.load_comments(fren, statuses_dict, comments_dir)
+        reactions = DataHandler.load_reactions(fren, statuses_dict, reactions_dir)
 
-        return fren, statuses, shares, comments, reactions
-
+        return DataHandler.Data(fren, statuses_dict, statuses_list, shares, comments, reactions)
 
 
 
@@ -107,28 +122,26 @@ class DataHandler:
         return tm.save_trie_map(trie_map, path)
     
     @staticmethod
-    def load_graph(friends, statuses, shares, comments, reactions, path: str) -> Graph:
+    @StopwatchMessageMaker("-".center(80, '-')+"\n"+"Loading graph...", "Loaded graph in: ")
+    def load_graph(data: 'DataHandler.Data', path: str) -> Graph:
         try:
             with open(path, "rb") as file:
                 graph = pickle.load(file)
         except FileNotFoundError:
-            graph = make_affinity_graph(friends, statuses, comments, shares, reactions)
+            graph = make_affinity_graph(data.friends_dict, data.statuses_dict, data.comments_list, data.shares_list, data.reactions_list)
             with open(path, "wb") as file:
                 pickle.dump(graph, file)
         return graph
 
 
     @staticmethod
+    @StopwatchMessageMaker("Saving graph...", "Saved graph in: ")
     def save_graph(graph, path: str) -> Union[FileNotFoundError, None]:
         try:
             with open(path, "wb") as file:
                 pickle.dump(graph, file)
         except FileNotFoundError:
             raise
-
-    @staticmethod
-    def new_graph() -> Graph:
-        ...
 
 
 
@@ -137,79 +150,102 @@ class DataHandler:
 
     @staticmethod
     @StopwatchMessageMaker("Loading friends...", "Friends loaded in: ")
-    def load_friends(path: str) -> List[Person]:
-        friends: List[Person] = []
-        with open(path, 'r', encoding="latin-1") as file:
-            for line in file.readlines()[1:]:
+    def load_friends(path: str) -> Dict[str, Person]: #person name : Person
+        """Ucita in instancira sve prijatelje."""
+
+        friends_friends: Dict[str, List[str]] = {} #maps person name to list of friend names
+        friends_dict: Dict[str, Person] = {}  #maps person name to person object
+
+        with open(path, 'r', encoding="utf-8") as file:
+            for line in itertools.islice(file, 1, None):
+                line = line.strip()
                 row_list: List[str] = line.split(',')
-                friends.append( Person(row_list[0], int(row_list[1]), set(row_list[2:])) ) 
+                
+                person, num_fren= row_list[:2]
+                fren = row_list[2:]
 
-        return friends
-        # def init(friends_list):
-        #     friends_list[1]: int = int( friends_list[1] )
-        #     friends_list[2]: set = set( ','.split(friends_list[2]) )
-        #     return Person(*friends_list) 
+                friends_friends[person] = fren
+                friends_dict[person] = Person(person, num_fren)
 
-        #return [ init(friends_list) for friends_list in load(path)]
+        for friend in friends_dict.values():
+            names_of_friends = friends_friends.pop(friend.person, [])
+            friend.friends = set( friends_dict[friend_name] for friend_name in names_of_friends )
+
+
+        return friends_dict
+                        
 
     @staticmethod
     @StopwatchMessageMaker("Loading statuses...", "Statuses loaded in: ")
-    def load_statuses(path: str) -> Tuple[List[Status], Dict[str, Status]]:
-        statuses_dict = {}   
+    def load_statuses(friends: Dict[str, Person], path: str) -> Tuple[Dict[str, Status], List[Status]]:
+        statuses_dict: Dict[str, Status] = {}  
 
         def init(status_list):
             status_list[6:]: int = [ int(num) for num in status_list[6:]]
             status_list[4]: time.struct_time = strptime(status_list[4], DATE_FORMAT)
+            status_list[5]: Person = friends[status_list[5]]
 
             status = Status(status_list)
             statuses_dict[status.status_id] = status
             return status
 
-        statuses_list = [ init(status_list) for status_list in load_statuses(path) ]
-
-        return statuses_list, statuses_dict
+        statuses_list: List[Status] = [] 
+        statuses_list.extend( init(status_list) for status_list in load_statuses(path) )
+        return statuses_dict, statuses_list
     
     @staticmethod
     @StopwatchMessageMaker("Loading comments...", "Comments loaded in: ")
-    def load_comments(path: str) -> List[Comment]:
+    def load_comments(friends: Dict[str, Person], statuses: Dict[str, Status], path: str) -> List[Comment]:
         def init(comment_list):
             comment_list[6:]: int = [ int(num) for num in comment_list[6:] ]
             comment_list[5]: time.struct_time = strptime(comment_list[5], DATE_FORMAT)
+            comment_list[4]: Person = friends[comment_list[4]]
+            comment_list[1]: Status = statuses[comment_list[1]]
             return Comment(comment_list)
         
-        return [ init(comment_list) for comment_list in load_comments(path) ]
+        comments: List[Comment] = []
+        comments.extend( init(comment_list) for comment_list in load_comments(path) )
+        return comments
 
     @staticmethod
     @StopwatchMessageMaker("Loading shares...", "Shares loaded in: ")
-    def load_shares(path: str) -> List[Share]:
+    def load_shares(friends: Dict[str, Person], statuses: Dict[str, Status], path: str) -> List[Share]:
         def init(share_list):
+            share_list[0]: Status = statuses[share_list[0]]
+            share_list[1]: Person = friends[share_list[1]]
             share_list[2]: time.struct_time = strptime(share_list[2], DATE_FORMAT)
             return Share(share_list)
-
-        return [ init(share_list) for share_list in load_shares(path) ]
+        
+        shares: List[Share] = []
+        shares.extend( init(share_list) for share_list in load_shares(path) )            
+        return shares
 
     @staticmethod
     @StopwatchMessageMaker("Loading reactions...", "Reactions loaded in: ")
-    def load_reactions(path: str) -> List[Reaction]:
+    def load_reactions(friends: Dict[str, Person], statuses: Dict[str, Person], path: str) -> List[Reaction]:
         def init(reaction_list):
             reaction_list[3]: time.struct_time = strptime(reaction_list[3], DATE_FORMAT)
+            reaction_list[2]: Person = friends[reaction_list[2]]
+            reaction_list[0]: Status = statuses[reaction_list[0]]
             return Reaction(reaction_list)
-
-        return [ init(reaction_list) for reaction_list in load_reactions(path) ]
+        
+        reactions: List[Reaction] = []
+        reactions.extend( init(reaction_list) for reaction_list in load_reactions(path) )
+        return reactions
     
 
-    #saving friends has a problem 
+    #saving friends has a problem NOW SAVING EVERYTHING HAS A PROBLEM BC OF INITIALIZATION!!!
     @staticmethod
-    def save_entity(entity_list: List[object], path: str): #could do something similar to loading but no time
+    def save_entity(entity_list: List[object], path: str):
         clazz = type(entity_list[0])
 
         headers = {
             Status : get_statuses_header, Share : get_share_header,
             Comment : get_comment_header, Reaction : get_reaction_header,
-            Person : lambda:"person,number_of_friends,friends"
+            Person : lambda: "person,number_of_friends,friends"
         }
 
-        with open(path, 'w', encoding='latin-1', newline='') as file:
+        with open(path, 'w', encoding="utf-8", newline='') as file:
             file.write(headers[clazz]() + "\n")
             for entity in entity_list:
                 file.write(entity.csv(entity))
@@ -217,7 +253,6 @@ class DataHandler:
     
 
     
-
 
 
 

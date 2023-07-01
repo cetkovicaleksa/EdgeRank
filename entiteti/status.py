@@ -10,8 +10,8 @@ class Status:
             self.status_message,
             self.status_type,
             self.status_link,
-            self.status_date_published,
-            self.status_author,
+            self.status_date_published, #datetime
+            self.status_author,   #Person
 
             self.number_of_reactions,
             self.number_of_comments,
@@ -42,7 +42,7 @@ class Status:
             status.status_type,
             status.status_link,
             strftime(DATE_FORMAT, status.status_date_published),  
-            status.status_author,
+            status.status_author.person,
 
             status.number_of_reactions,
             status.number_of_comments,
@@ -58,10 +58,9 @@ class Status:
 
         ]
 
-        if return_string is True:
-            ret = [str(val) for val in ret]
-            ret = ",".join(ret) + '\n'
+        for i in range(6, len(ret)):
+            ret[i] = str(ret[i])
 
-        return ret
+        return ",".join(ret) + '\n' if return_string is True else ret
     
 

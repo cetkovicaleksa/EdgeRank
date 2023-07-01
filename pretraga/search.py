@@ -1,4 +1,4 @@
-from pretraga.edge_rank import edge_rank_score
+#from pretraga.edge_rank import edge_rank_score
 from strukture.trie_map import TrieMap as tm
 from strukture.trie import Trie
 from strukture.graph import Graph
