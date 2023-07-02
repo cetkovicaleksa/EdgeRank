@@ -1,4 +1,5 @@
 #from pretraga.edge_rank import edge_rank_score
+from pretraga.edge_rank import edge_rank_score
 from strukture.trie_map import TrieMap as tm
 from strukture.trie import Trie
 from strukture.graph import Graph
@@ -20,7 +21,7 @@ def words_count_score(*words: str, trie: Trie) -> int: #return the number of occ
 
 def search_score(*words: str, status: Status, trie_map: tm, fren: Person, graph: Graph) -> float:
     ss = sw.word_weight * words_count_score(*words, trie =trie_map[status.status_id])
-    es = 1 #edge_rank_score(status, fren, graph)
+    es = edge_rank_score(status, fren, graph)
     return ss + sw.edge_rank_weight**es
 
 

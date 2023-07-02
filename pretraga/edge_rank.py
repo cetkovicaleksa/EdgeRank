@@ -6,4 +6,9 @@ from pretraga.status_eval_factor import status_score
 
 
 def edge_rank_score(status: Status, person: Person, graph: Graph):
-    return graph.get_edge(person, status.status_author) * status_score(status) * time_decay(status.status_date_published)
+    try:
+        affinity: float = graph.get_edge(person, status.status_author)
+    except Graph.InvalidVertexException:
+        affinity: float = 1
+
+    return  affinity * status_score(status) * time_decay(status.status_date_published)

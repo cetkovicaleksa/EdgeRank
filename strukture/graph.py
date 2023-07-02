@@ -17,7 +17,6 @@ from entiteti.person import Person
 class Graph:
     """Implementacija usmjerenog grafa gdje svaki vertex sadrzi kolekiju susjednih."""
     __slots__ = "_adj", "_vertices"
-
     class Edge(namedtuple("Edge", "outgoing incoming value")):
         pass
         # def __hash__(self) -> int:

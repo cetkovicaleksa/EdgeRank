@@ -38,6 +38,10 @@ def eval_reaction(reaction: Reaction):
     if reaction.reaction_type == "special": return RW.special * reaction_score
     if reaction.reaction_type == "wows": return RW.wows * reaction_score
 
+
+
+
+
 @StopwatchMessageMaker("No graph cache, making graph...", "Made graph in: ")
 def make_affinity_graph(fren: Dict[str, Person], statusi_dict: Dict[str, Status], comments: List[Comment], shares: List[Share], reactions: List[Reaction]) -> Graph:
     graph = Graph(fren.values(), 1)
@@ -48,9 +52,9 @@ def make_affinity_graph(fren: Dict[str, Person], statusi_dict: Dict[str, Status]
 @StopwatchMessageMaker("Making friendhip connections...", "Made frienship connections in: ")
 def make_friedship_graph(graph: Graph, friends_dict: Dict[str, Person]):
     acquaintances = HIW.friends // 3
+    person: Person
 
     for person in graph.vertices():  #maby add multiple levels
-        person: Person
         for person_fren in person.friends:
             person_fren: Person
             graph.increase_edge_weight(person, person_fren, HIW.friends)
@@ -60,13 +64,20 @@ def make_friedship_graph(graph: Graph, friends_dict: Dict[str, Person]):
 @StopwatchMessageMaker("Making share, comment and reaction connections...", "Made connections in: ")
 def establish_connections(graph: Graph, friends_dict: Dict[str, Person], statusi_dict: Dict[str, Status], komentari: List[Comment], djeljenja: List[Share], reakcije: List[Reaction]):
     
-    nested_comment = HIW.comment // 3  
+    nested_comment = HIW.comment // 3
     
-    for share in djeljenja:
-        graph.increase_edge_weight(share.who_shared, share.status.status_author, eval_share(share))
+    for share in djeljenja: #there seems to be shares that have nonexistent sharer
+        try:
+            graph.increase_edge_weight(share.who_shared, share.status.status_author, eval_share(share))
+        except Graph.InvalidVertexException as e:
+            print(share.who_shared.person, share.status.status_id, share.status.status_author.person, str(e))
+            while True:
+                pass
 
     for comment in komentari:
         graph.increase_edge_weight(comment.comment_author, comment.status.status_author, eval_comment(comment))
    
     for reaction in reakcije:
         graph.increase_edge_weight(reaction.who_reacted, reaction.status.status_author, eval_reaction(reaction))
+
+    #could do something more complex bc every entity is an object containing references to other entity objects

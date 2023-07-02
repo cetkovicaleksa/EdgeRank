@@ -1,6 +1,6 @@
 from collections import namedtuple
 import itertools
-from typing import Dict, NamedTuple, Union, Tuple, List, Set
+from typing import Any, Callable, Dict, NamedTuple, Union, Tuple, List, Set
 from data.data_tools.stopwatch import StopwatchMessageMaker, StopwatchMaker
 from konstante import ORIGINAL_PATHS, TEST_PATHS, PICKLE_PATHS, DATE_FORMAT
 from data.data_tools.parse_files import (
@@ -33,7 +33,7 @@ class DataHandler:
     
     __pkl_paths = PICKLE_PATHS
 
-    class AllData(namedtuple("AllData", "data: Data trie: dict graph: Graph")):
+    class AllData(namedtuple("AllData", "data trie graph")):
             pass
     
     class Data(namedtuple("Data", "friends_dict statuses_dict statuses_list shares_list comments_list reactions_list")):
@@ -136,8 +136,32 @@ class DataHandler:
         return make_affinity_graph(data.friends_dict, data.statuses_dict, data.comments_list, data.shares_list, data.reactions_list) 
 
     @staticmethod
-    def update_graph(original_graph: Graph, test_graph: Graph) -> Graph:
-        ...
+    @StopwatchMessageMaker("Updating graph...", "Updated graph in: ")
+    def update_graph(original_graph: Graph, test_graph: Graph, edge_merging_function: 'Callable[[float,float],float]' = lambda x,y: x+y) -> Graph:
+      
+        class Function:
+            def __init__(self, x: float, merging_func = None) -> None:
+                self.x = x
+                self._func = merging_func
+
+            def __call__(self, y: float) -> float:
+                return self._func(self.x, y)
+            
+
+        func = Function(0, edge_merging_function)        
+           
+
+        for vertex in test_graph.vertices():
+            try:
+                original_graph.insert_vertex(vertex)
+            except Graph.VertexAlreadyExistsException:
+                continue
+        
+        for edge in test_graph.edges():
+            func.x = edge.value
+            original_graph.modify_edge(edge.outgoing, edge.incoming, func)
+
+
 
 #-- loading and saving entities --
 

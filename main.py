@@ -11,8 +11,10 @@ from data.data_tools.stopwatch import StopwatchMaker
 from konstante import DATE_FORMAT, ORIGINAL_PATHS, TEST_PATHS, MIXED_PATHS
 import random
 from pretraga.search import search
+from pretraga.affinity import make_affinity_graph, establish_connections, make_friedship_graph
+from pretraga.edge_rank import edge_rank_score
 
-def login(frens):
+def login(frens: List[Person]):
     print("LOGIN".center(80, '='))
     print(''.center(80, '-'))
     print("Your name: ")
@@ -49,20 +51,56 @@ if __name__ == "__main__":
 
     
     dh = DataHandler()
-    data: DataHandler.AllData = dh()
+    all_data: DataHandler.AllData = dh()
 
-    trie_map: dict = data.trie
-    graph: Graph = data.graph
-    data: DataHandler.Data = data.data
+    trie_map: dict = all_data.trie
+    graph: Graph = all_data.graph
+    data: DataHandler.Data = all_data.data
+    
+
+
+    print('TRIE INFO'.center(80, '='))
+    print("Number of tries: "+str(len(trie_map)))
+    print(''.center(80, '='))
+    
+    print('GRAPH INFO'.center(80, '='))
+    print("Vertex count: "+str(graph.vertex_count()), "Edge count: "+str(graph.edge_count()),"Default edge weight: "+str(graph.get_default_edge_weight()), sep='\n')
+    print(''.center(80, '='))
+    
 
     if append_test_data is True:
-        test_data: DataHandler.Data = dh.load_test_data()
-        test_trie_map: dict = TrieMap.new_trie_map(test_data.statuses_list)
-        test_graph: Graph = DataHandler.make_graph(test_data)
+        
+        test_friends = {person.person: person for person in graph.vertices()} #noob solution, the graph keeps Person objects as vertices and it also serializes them with itself, so when we first load the friends we make all their objects and after when we load the graph it loads its serialized Person objects so we have duplicates
+        test_statuses_dict, test_statuses_list = dh.load_statuses(test_friends, TEST_PATHS.statuses)
+        test_shares = dh.load_shares(test_friends, test_statuses_dict, TEST_PATHS.shares)
+        test_comments = dh.load_comments(test_friends, test_statuses_dict, TEST_PATHS.comments)
+        test_reactions = dh.load_reactions(test_friends, test_statuses_dict, TEST_PATHS.reactions)
+        test_data = DataHandler.Data(test_friends, test_statuses_dict, test_statuses_list, test_shares, test_comments, test_reactions)
 
+        test_trie_map: dict = TrieMap.new_trie_map(test_data.statuses_list)
         trie_map.update(test_trie_map)
-        DataHandler.update_graph(graph, test_graph)
-        #entity data is kept separate for now
+
+        print("Updating graph...")        
+        establish_connections(graph, test_data.friends_dict, test_data.statuses_dict, test_data.comments_list, 
+                              test_data.shares_list, test_data.reactions_list)        
+
+        
+  
+        #updating entity data
+        data.friends_dict.update(test_data.friends_dict)
+        data.comments_list.extend(test_data.comments_list)
+        data.statuses_dict.update(test_data.statuses_dict)
+        data.statuses_list.extend(test_data.statuses_list)
+        data.reactions_list.extend(test_data.reactions_list)
+        data.shares_list.extend(test_data.shares_list)
+
+        print('NEW TRIE INFO'.center(80, '='))
+        print("Number of tries: "+str(len(trie_map)))
+        print(''.center(80, '='))
+    
+        print('NEW GRAPH INFO'.center(80, '='))
+        print("Vertex count: "+str(graph.vertex_count()), "Edge count: "+str(graph.edge_count()),"Default edge weight: "+str(graph.get_default_edge_weight()), sep='\n')
+        print(''.center(80, '='))
 
     
 
@@ -93,15 +131,18 @@ if __name__ == "__main__":
             while 'Search':
                 try:
                     c = input('Rijeci za pretragu ili 0 za nazad: >>').strip()
+                    
                     if c == '0':
                         break
+
                     c = c.split()
-                    result: List[Status] = search(*c, user, data.statuses_list, trie_map, graph)
+                    result = search(*c, fren=user, statuses_list=data.statuses_list, trie_map=trie_map, graph=graph)
+                   
                     for s in result:
                         print(''.center(80, '-'))
                         print(s.status_author.person, s.status_id, strftime(DATE_FORMAT, s.status_date_published), s.status_message, sep='\n')
                         print(''.center(80, '-'))
-                    continue
+
                 except ValueError:
                     print("Molimo unesite rijeci u obliku: [word word word...]")
                 except Exception:
@@ -109,37 +150,9 @@ if __name__ == "__main__":
 
 
         if choice == 2:
-            ...#show feed
-    
-    
-    
-    # fren = dh.load_friends(TEST_PATHS.friends)
-    # statuses = dh.load_statuses(fren, ORIGINAL_PATHS.statuses)
-    # comments = dh.load_comments(fren, statuses[0], ORIGINAL_PATHS.comments)
-
-    # dh.save_entity(comments, "data/dataset/aki_comments.txt")
-    
-
-    raise KeyboardInterrupt()
-
-    # graph = dh.load_graph_from_default(None)
-    
-    # data: DataHandler.AllData = None
-    # graph = dh.load_graph_from_default(None)
-
-    # iter = next(iter(graph._adj.items()))
-    # print(type(iter[1]))
-    # print(iter[1]["aki"],type(iter[1]), iter[1].get_default_value())
-    # print(type(graph._adj["aki"]))
-    # print(type(graph._adj))
-    # print(graph.vertex_count())
-    # print(graph.edge_count())
-    # iter = ( (x.person, x.number_of_friends) for x in graph.vertices())
-    
-    # print('...')
-    # while(True):
-    #     print(next(iter))
-    #     raise KeyboardInterrupt()
-    
-    
+            result: List[Status] = sorted(data.statuses_list, key=lambda status: edge_rank_score(status, user, graph), reverse=True)[:10]
+            for s in result:
+                print(''.center(80, '-'))
+                print(s.status_author.person, s.status_id, strftime(DATE_FORMAT, s.status_date_published), s.status_message, sep='\n')
+                print(''.center(80, '-'))
   

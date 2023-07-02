@@ -1,32 +1,22 @@
 from math import exp
 from datetime import datetime, timedelta
+from time import struct_time, mktime
 import numpy as np
+from konstante import TIME_DECAY_WEIGHTS as tdw
+import time
 
 
-def time_decay(date_of_creation: datetime, date_now = datetime.now()):
-    return 1/3
-    time_delta = date_now - date_of_creation
+def time_decay(date_of_creation: struct_time, date_now: struct_time = None):
+    delta = mktime(date_now) - mktime(date_of_creation) if date_now else time.time() - mktime(date_of_creation)
 
-    delta_ranges = [timedelta(hours=1), timedelta(days=1),
-                    timedelta(days=7), timedelta(days=30), timedelta(days=364)]
-    
-    delta_ranges = dict((), (), (), (), (), ())
-    
-    div_factor = None
-    for i in delta_ranges:
-        if delta_ranges[i] < time_delta:
-            div_factor = delta_ranges[i]
-            continue
-        break
+    if delta < 3600: return tdw.last_hour * tdw.decay_rate**(delta / 3600)
 
-    if not div_factor:
-        div_factor = timedelta()
+    if delta < 86400: return tdw.today * tdw.decay_rate**(delta / 86400)
 
-    
-    
-        pass
+    if delta < 604800: return tdw.this_week * tdw.decay_rate**(delta / 604800)
 
-    return np.exp(-DECAY * time_delta)
+    if delta < 2419200: return tdw.this_month * tdw.decay_rate**(delta / 2419200)
 
+    if delta < 31536000: return tdw.this_year * tdw.decay_rate**(delta / 31536000)
 
-    
+    return tdw.long_time_ago * exp(-delta / 31536000)
