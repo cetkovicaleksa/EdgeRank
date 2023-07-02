@@ -1,8 +1,9 @@
 import pickle
 from time import strftime
 from typing import List
+from entiteti.person import Person
 from entiteti.status import Status
-from strukture.graph import IncomingDict
+from strukture.graph import Graph, IncomingDict
 from strukture.trie import Trie
 from strukture.trie_map import TrieMap
 from data.data_tools.data_handler import DataHandler
@@ -38,37 +39,35 @@ def show_menu():
     except ValueError as e:
         raise ValueError("Invalid choice.")
 
-
+def cli():
+    ...
 
 if __name__ == "__main__":
+
+    append_test_data: bool = False
+    skip_login: bool = True
+
     
     dh = DataHandler()
+    data: DataHandler.AllData = dh()
 
-    # graph = dh.load_graph_from_default(None)
-    
-    data: DataHandler.AllData = None
-    graph = dh.load_graph_from_default(None)
+    trie_map: dict = data.trie
+    graph: Graph = data.graph
+    data: DataHandler.Data = data.data
 
-    iter = next(iter(graph._adj.items()))
-    print(type(iter[1]))
-    print(iter[1]["aki"],type(iter[1]), iter[1].get_default_value())
-    print(type(graph._adj["aki"]))
-    print(type(graph._adj))
-    print(graph.vertex_count())
-    print(graph.edge_count())
-    iter = ( (x.person, x.number_of_friends) for x in graph.vertices())
-    
-    print('...')
-    while(True):
-        print(next(iter))
-        raise KeyboardInterrupt()
-    
-    
-    skip_login = True
+    if append_test_data is True:
+        test_data: DataHandler.Data = dh.load_test_data()
+        test_trie_map: dict = TrieMap.new_trie_map(test_data.statuses_list)
+        test_graph: Graph = DataHandler.make_graph(test_data)
 
+        trie_map.update(test_trie_map)
+        DataHandler.update_graph(graph, test_graph)
+        #entity data is kept separate for now
 
-    if skip_login:
-        user = random.choice(list(data.friends_dict.values()))
+    
+
+    if skip_login is True:
+        user: Person = random.choice(list(data.friends_dict.values()))
     else:
         while 'LOGIN':
             try:
@@ -77,8 +76,9 @@ if __name__ == "__main__":
             except ValueError as e:
                 print(e)
                 continue
-        
-    print('Logged in as: ' + user.person)
+
+    print("\nLogged in as: " + user.person)
+
     while 'LOGGED IN':
         try:
             choice = show_menu()
@@ -96,10 +96,10 @@ if __name__ == "__main__":
                     if c == '0':
                         break
                     c = c.split()
-                    result = search(*c, fren=user, statuses_list=statusi_lista, trie_map=trie, graph=None)
+                    result: List[Status] = search(*c, user, data.statuses_list, trie_map, graph)
                     for s in result:
                         print(''.center(80, '-'))
-                        print(s.status_author, s.status_id, strftime(DATE_FORMAT, s.status_date_published), s.status_message[:1000] + '...', sep='\n')
+                        print(s.status_author.person, s.status_id, strftime(DATE_FORMAT, s.status_date_published), s.status_message, sep='\n')
                         print(''.center(80, '-'))
                     continue
                 except ValueError:
@@ -110,5 +110,36 @@ if __name__ == "__main__":
 
         if choice == 2:
             ...#show feed
+    
+    
+    
+    # fren = dh.load_friends(TEST_PATHS.friends)
+    # statuses = dh.load_statuses(fren, ORIGINAL_PATHS.statuses)
+    # comments = dh.load_comments(fren, statuses[0], ORIGINAL_PATHS.comments)
 
+    # dh.save_entity(comments, "data/dataset/aki_comments.txt")
+    
 
+    raise KeyboardInterrupt()
+
+    # graph = dh.load_graph_from_default(None)
+    
+    # data: DataHandler.AllData = None
+    # graph = dh.load_graph_from_default(None)
+
+    # iter = next(iter(graph._adj.items()))
+    # print(type(iter[1]))
+    # print(iter[1]["aki"],type(iter[1]), iter[1].get_default_value())
+    # print(type(graph._adj["aki"]))
+    # print(type(graph._adj))
+    # print(graph.vertex_count())
+    # print(graph.edge_count())
+    # iter = ( (x.person, x.number_of_friends) for x in graph.vertices())
+    
+    # print('...')
+    # while(True):
+    #     print(next(iter))
+    #     raise KeyboardInterrupt()
+    
+    
+  

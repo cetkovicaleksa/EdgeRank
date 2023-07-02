@@ -33,30 +33,24 @@ class DataHandler:
     
     __pkl_paths = PICKLE_PATHS
 
-    class AllData(namedtuple("AllData", "data trie graph")):
+    class AllData(namedtuple("AllData", "data: Data trie: dict graph: Graph")):
             pass
+    
     class Data(namedtuple("Data", "friends_dict statuses_dict statuses_list shares_list comments_list reactions_list")):
             pass
 
     def __init__(self) -> None:
         pass
 
-    def __call__(self): #load all the data and pickled and return it
+    def __call__(self) -> AllData: #load all the data and pickled and return it
     
-        data = self.load_original_data()
-        trie = self.load_trie_from_default(data.statuses_list)
-        graph = self.load_graph_from_default(data)
+        data: DataHandler.Data = self.load_original_data()
+        trie: Dict[str, Trie] = self.load_trie_from_default(data.statuses_list)
+        graph: Graph = self.load_graph_from_default(data)
         return DataHandler.AllData(data, trie, graph)
 
 
-    def load_original_data(self) -> NamedTuple('Data', [
-            ('friends_dict', Dict[str, Person]),
-            ('statuses_dict', Dict[str, Status]),
-            ('statuses_list', List[Status]),
-            ('shares_list', List[Share]),
-            ('comments_list', List[Comment]),
-            ('reactions_list', List[Reaction])
-            ]):
+    def load_original_data(self) -> Data:
         op = self.__original_paths
         backup = self.load_data
         timer = StopwatchMessageMaker(loading_msg=''.center(80, '=') + "\nLoading original data: :)\n", end_msg=''.center(80, '=')+"\nOriginal data loaded in: ")(self.load_data)
@@ -64,21 +58,15 @@ class DataHandler:
         self.load_data = backup
         return ret        
 
-    def load_test_data(self) -> NamedTuple('Data', [
-            ('friends_dict', Dict[str, Person]),
-            ('statuses_dict', Dict[str, Status]),
-            ('statuses_list', List[Status]),
-            ('shares_list', List[Share]),
-            ('comments_list', List[Comment]),
-            ('reactions_list', List[Reaction])
-            ]):
+    def load_test_data(self) -> Data:
         """
         Adjusts the dates of test data and then loads them.
         """
         tp = self.__test_paths
-        #StopwatchMaker(adjust_date_time)(tp.statuses, tp.comments, tp.shares, tp.reactions, loading_msg = "Updating dates for test data...", end_msg = "Dates updated in: ")
-        return StopwatchMaker(DataHandler.load_data)(tp.friends, tp.statuses, tp.shares, tp.comments, tp.reactions, loading_msg = ''.center(80, '=') + "\nLoading test data: :)\n", end_msg = ''.center(80, '=')+"\nTest data loaded in: ")
-    
+        StopwatchMessageMaker("Updating dates for test data...", "Dates updated in: ")(adjust_date_time)(tp.statuses, tp.comments, tp.shares, tp.reactions)
+
+        data: DataHandler.Data = StopwatchMaker(DataHandler.load_data)(tp.friends, tp.statuses, tp.shares, tp.comments, tp.reactions, loading_msg = ''.center(80, '=') + "\nLoading test data: :)\n", end_msg = ''.center(80, '=')+"\nTest data loaded in: ")
+        return data
     
     def load_trie_from_default(self, statusi_lista: List[Status] = []):
         return DataHandler.load_trie_map(self.__pkl_paths.trie, statusi_lista)
@@ -128,7 +116,7 @@ class DataHandler:
             with open(path, "rb") as file:
                 graph = pickle.load(file)
         except FileNotFoundError:
-            graph = make_affinity_graph(data.friends_dict, data.statuses_dict, data.comments_list, data.shares_list, data.reactions_list)
+            graph = DataHandler.make_graph(data)
             with open(path, "wb") as file:
                 pickle.dump(graph, file)
         return graph
@@ -143,7 +131,13 @@ class DataHandler:
         except FileNotFoundError:
             raise
 
+    @staticmethod
+    def make_graph(data: Data):
+        return make_affinity_graph(data.friends_dict, data.statuses_dict, data.comments_list, data.shares_list, data.reactions_list) 
 
+    @staticmethod
+    def update_graph(original_graph: Graph, test_graph: Graph) -> Graph:
+        ...
 
 #-- loading and saving entities --
 
@@ -196,16 +190,31 @@ class DataHandler:
     @staticmethod
     @StopwatchMessageMaker("Loading comments...", "Comments loaded in: ")
     def load_comments(friends: Dict[str, Person], statuses: Dict[str, Status], path: str) -> List[Comment]:
-        def init(comment_list):
-            comment_list[6:]: int = [ int(num) for num in comment_list[6:] ]
-            comment_list[5]: time.struct_time = strptime(comment_list[5], DATE_FORMAT)
-            comment_list[4]: Person = friends[comment_list[4]]
-            comment_list[1]: Status = statuses[comment_list[1]]
-            return Comment(comment_list)
+        comments_dict: Dict[str, Comment] = {}
         
-        comments: List[Comment] = []
-        comments.extend( init(comment_list) for comment_list in load_comments(path) )
-        return comments
+        def init(comment_list):
+            comment_list[1]: Status = statuses[comment_list[1]]
+            comment_list[4]: Person = friends[comment_list[4]]
+            comment_list[5]: time.struct_time = strptime(comment_list[5], DATE_FORMAT)
+            comment_list[6:]: int = [ int(num) for num in comment_list[6:]]
+
+            comment = Comment(comment_list)
+            comments_dict[comment_list[0]] = comment
+            return comment 
+        
+
+        comments_list: List[Comment] = []
+        comments_list.extend( init(comment_list) for comment_list in load_comments(path) )
+        
+        for comment in comments_list:
+            if comment.comment_parent:
+                try:
+                    comment.comment_parent = comments_dict[comment.comment_parent]
+                except KeyError:
+                    comment.comment_parent = ""  #temporary fix bc many comments don't have existing parent id
+                    
+
+        return comments_list
 
     @staticmethod
     @StopwatchMessageMaker("Loading shares...", "Shares loaded in: ")
@@ -234,19 +243,29 @@ class DataHandler:
         return reactions
     
 
-    #saving friends has a problem NOW SAVING EVERYTHING HAS A PROBLEM BC OF INITIALIZATION!!!
     @staticmethod
-    def save_entity(entity_list: List[object], path: str):
-        clazz = type(entity_list[0])
+    def save_entity(entity_list: List[Union[Person, Status, Comment, Share, Reaction]], path: str) -> Union[None, FileNotFoundError]:
+        try:
+            clazz = type( next( iter(entity_list) ) )
+        except StopIteration:
+            raise ValueError("The provided list is empty!")
+        
+        if any( not isinstance(e, clazz) for e in entity_list ):
+            raise ValueError(f"Not all entities in the provided list are the same type: [{clazz}]")
 
         headers = {
             Status : get_statuses_header, Share : get_share_header,
             Comment : get_comment_header, Reaction : get_reaction_header,
             Person : lambda: "person,number_of_friends,friends"
         }
+        
+        try:
+            write_headers = headers[clazz]
+        except KeyError:
+            raise ValueError(f"Entity class is not supported. [{clazz}]")
 
         with open(path, 'w', encoding="utf-8", newline='') as file:
-            file.write(headers[clazz]() + "\n")
+            file.write(write_headers() + "\n")
             for entity in entity_list:
                 file.write(entity.csv(entity))
 

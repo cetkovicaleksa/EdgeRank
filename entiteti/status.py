@@ -1,5 +1,6 @@
-from time import strptime, strftime
+from time import strptime, strftime, struct_time
 from typing import Union
+from entiteti.person import Person
 from konstante import DATE_FORMAT
 
 class Status:
@@ -27,7 +28,23 @@ class Status:
 
         ) = status_list
 
+        self.status_id: str
+        self.status_message: str
+        self.status_type: str
+        self.status_link: str
+        self.status_date_published: struct_time
+        self.status_author: Person
 
+        self.number_of_reactions: int
+        self.number_of_comments: int
+        self.number_of_shares: int
+        self.number_of_likes: int
+        self.number_of_loves: int
+        self.number_of_wows: int
+        self.number_of_hahas: int
+        self.number_of_sads: int
+        self.number_of_angrys: int
+        self.number_of_special: int
         #self.status_date_published = strptime(self.status_date_published, DATE_FORMAT)
 
 

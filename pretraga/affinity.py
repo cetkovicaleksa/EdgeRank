@@ -41,35 +41,32 @@ def eval_reaction(reaction: Reaction):
 @StopwatchMessageMaker("No graph cache, making graph...", "Made graph in: ")
 def make_affinity_graph(fren: Dict[str, Person], statusi_dict: Dict[str, Status], comments: List[Comment], shares: List[Share], reactions: List[Reaction]) -> Graph:
     graph = Graph(fren.values(), 1)
+    make_friedship_graph(graph, fren)
     establish_connections(graph, fren, statusi_dict, comments, shares, reactions)
     return graph
 
+@StopwatchMessageMaker("Making friendhip connections...", "Made frienship connections in: ")
+def make_friedship_graph(graph: Graph, friends_dict: Dict[str, Person]):
+    acquaintances = HIW.friends // 3
 
-#@StopwatchMessageMaker("Making graph connections...", "Made graph connections in: ")
-def establish_connections(graph: Graph, friends_dict: Dict[str, Person], statusi_dict: Dict[str, Status], komentari: List[Comment], djeljenja: List[Share], reakcije: List[Reaction]):
-    fren: Set[Person] = graph.vertices() 
-    aquaintances = HIW.friends // 3
-
-    for person in fren:  #maby add multiple levels
+    for person in graph.vertices():  #maby add multiple levels
+        person: Person
         for person_fren in person.friends:
+            person_fren: Person
             graph.increase_edge_weight(person, person_fren, HIW.friends)
-            for persons_fren_fren in person_fren.friends:
-                graph.increase_edge_weight(person_fren, persons_fren_fren, aquaintances)
-    
-    print('finished friends')
-    print(graph.vertex_count(),graph.edge_count(), sep='|')
+            # for persons_fren_fren in person_fren.friends:
+            #     graph.increase_edge_weight(person_fren, persons_fren_fren, acquaintances)
 
+@StopwatchMessageMaker("Making share, comment and reaction connections...", "Made connections in: ")
+def establish_connections(graph: Graph, friends_dict: Dict[str, Person], statusi_dict: Dict[str, Status], komentari: List[Comment], djeljenja: List[Share], reakcije: List[Reaction]):
+    
+    nested_comment = HIW.comment // 3  
+    
     for share in djeljenja:
-        graph.increase_edge_weight(share.who_shared, share.status.status_author, eval_share(share)) #status_id is now a status
-    print('finished shares')
+        graph.increase_edge_weight(share.who_shared, share.status.status_author, eval_share(share))
 
     for comment in komentari:
         graph.increase_edge_weight(comment.comment_author, comment.status.status_author, eval_comment(comment))
-    print('finished comments')
+   
     for reaction in reakcije:
         graph.increase_edge_weight(reaction.who_reacted, reaction.status.status_author, eval_reaction(reaction))
-    print('finished reactions')
-
-    print(graph.vertex_count(),graph.edge_count(),graph.get_default_edge_weight(), sep='|')
-
-        #u statusu, komentaru i reakciji autor nije person nego samo string ali imaju istu hesh vrijednost

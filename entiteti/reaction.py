@@ -1,11 +1,16 @@
-from time import strptime, strftime
+from time import strptime, strftime, struct_time
 from typing import Union
+from entiteti.person import Person
+from entiteti.status import Status
 from konstante import DATE_FORMAT
 
 
 class Reaction:
     def __init__(self, reaction_list) -> None:
-        self.status, self.reaction_type, self.who_reacted, self.date_reacted = reaction_list #reaction_list[:3]
+        self.status: Status = reaction_list[0]
+        self.reaction_type: str = reaction_list[1]
+        self.who_reacted: Person = reaction_list[2]
+        self.date_reacted: struct_time = reaction_list[3]
         #self.date_reacted = strptime(reaction_list[3], DATE_FORMAT)
 
 
